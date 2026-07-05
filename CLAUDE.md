@@ -45,6 +45,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 型ヒント必須 + 日本語 Google スタイル docstring 必須。ruff（`pydocstyle=google`）+ mypy（`disallow_untyped_defs`）
 - **Web アプリに書き込み機能を足さない**（設計上の決定）。データ変更は必ず `/paper-import` かユーザーの手編集 + validate.py
 - データ変更後は必ず `scripts/build_index.py` → `scripts/validate.py` を実行する
+- **台帳（relations / question_links）への書き込みは直列に行う**。連番が「既存最大+1」方式のため並行書き込みは ID 競合する（並行取り込みは論文ファイル作成までに留める）
+
+## データの削除・修正の手順
+
+- クレーム・論文を削除すると relations / question_links がダングリングする。**削除 → `validate.py` 実行 → 列挙されたダングリング関係・リンクを削除 → `build_index.py`** の順で掃除する
+- ID の**欠番は再利用しない**（rel / ql / claim いずれも。過去の参照履歴と混線するため）
+- データは取り込み単位で git コミットされているので、壊れたら `git log data/` から巻き戻せる
+- ID 空間の上限: claim = c99/論文、question = q-99、relation/link = 9999。個人利用では当面問題ないが、超える場合は `app/models.py` の正規表現と既存データの一括変換が必要
 
 ## 最重要: JSON スキーマ（Claude 連携仕様の本体）
 

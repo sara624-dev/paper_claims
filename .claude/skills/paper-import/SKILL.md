@@ -15,6 +15,11 @@ allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion, Bash(curl *), Bas
 論文1本を取り込み、クレーム抽出 → 既存クレームとの照合 → 関係judgment → 保存 → 検証まで行うワークフロー。
 作業ディレクトリは `/workspace/paper_claims/`。データスキーマの正は `app/models.py`（詳細表は `CLAUDE.md`）。
 
+**IMPORTANT: 台帳への書き込みは直列に行うこと。** rel / ql の連番は「既存最大+1」方式のため、
+複数の取り込みを並行実行すると ID が競合し relations.json / question_links.json で更新が失われる。
+複数論文を並行処理する場合は、**論文ファイル（`data/papers/*.json`）の作成までを並行**とし、
+関係・問いリンクの judgment と書き込みは全論文の抽出完了後に1プロセスでまとめて行う。
+
 ## 手順
 
 ### 1. 引数解析と重複チェック
@@ -25,8 +30,9 @@ allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion, Bash(curl *), Bas
 - `data/papers/<paper_id>.json` が既に存在する場合は**中断してユーザーに報告**する（更新は明示指示があった場合のみ）。
 
 **追補モード**: 「〜の観点でクレームを追補して」のように取り込み済み論文への追加を明示指示された場合は、
-PDF を指定観点で再読し、既存クレームと重複しない新規クレームを続き連番（`c<次番>`）で追加する
-（quote / section 必須）。追補後は手順6〜9（照合・問い判定・検証）を新規クレームに対して実施し、
+PDF を指定観点で再読し、既存クレームと重複しない新規クレームを続き連番で追加する
+（quote / section 必須）。連番は**既存最大+1**。クレームを削除した場合の欠番は**再利用しない**
+（関係・リンクが旧IDを参照していた履歴と混線するため）。追補後は手順6〜9（照合・問い判定・検証）を新規クレームに対して実施し、
 `uv run python scripts/verify_quotes.py <paper_id>` も実行する。
 初回取り込みの3〜10件はダイジェストであり、取りこぼしはこの追補と /paper-question の
 問い駆動再読（手順2.5）で回復する二段構えの設計。
@@ -79,10 +85,11 @@ pdftotext data/pdfs/<paper_id>.pdf - | head -c 30000   # 分割して読む
 ### 6. 既存クレームとの照合と関係judgment
 
 ```bash
+uv run python scripts/build_index.py   # 照合前に必ずインデックスを最新化する（手動編集・追補後の鮮度ずれ対策）
 grep '<topic-id>' data/claims_index.jsonl
 ```
 
-で同一トピックの既存クレーム候補を取得（インデックスが無い/古い場合は先に `uv run python scripts/build_index.py`）。
+で同一トピックの既存クレーム候補を取得。
 サマリを読んで関連しそうな候補があれば、**その候補が属する論文ファイルだけ** Read して詳細（実験条件・数値）を比較し、関係を判定する:
 
 | type | 判定基準 |

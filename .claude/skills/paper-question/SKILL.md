@@ -51,8 +51,10 @@ grep '<topic-id>' data/claims_index.jsonl
 1. 対象トピックの取り込み済み論文の title / abstract / notes を確認し、
    「クレームには答えが無いが、この論文は問いに答えていそう」なものを挙げる
 2. 該当があればその論文の PDF（`data/pdfs/`）を**問いの観点で再読**し、
-   答えとなる主張が見つかれば既存クレームの続き連番（`<paper_id>-c<次番>`）で追補する
-   （quote / section 必須。追補後に `uv run python scripts/verify_quotes.py <paper_id>` を実行）
+   答えとなる主張が見つかれば既存クレームの続き連番（既存最大+1）で追補する
+   （quote / section 必須。追補後に `uv run python scripts/verify_quotes.py <paper_id>` を実行）。
+   **追補前に必ずその論文の既存クレーム全件と突き合わせ、実質同一の主張が既にあれば
+   追補せずそのクレームにリンクする**（近い問いで再読が繰り返されると重複クレームが蓄積するため）
 3. 追補したクレームを手順2と同様にリンクする
 
 該当論文が多い場合は全再読せず、有望な2〜3本に絞ってユーザーに報告する。
