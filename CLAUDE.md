@@ -87,6 +87,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `id` | str | `rel-NNNN`（4桁連番、既存最大+1） |
 | `from` / `to` | str | claim id。向きは「**from が to を 支持/反証/拡張 する**」 |
 | `type` | str | `supports` / `contradicts` / `same_as` / `extends`。**same_as は from < to（辞書順）に正規化** |
+
+方向の意味論:
+- `supports` / `extends` は本質的に非対称（証拠の提供・積み上げ）。**相互支持**は両方向に2本張って表現する（合法）
+- `contradicts` は**論理的には対称**（両立しない）。脈図では両端矢印で描かれる。from/to は「**対立を提起した側 → された側**」（通常は後発論文が from）という来歴として保持する
+- `same_as` は対称のため正規化・無矢印破線
 | `rationale_ja` | str | 判断根拠（実験条件の差異を明記・必須） |
 | `confidence` | str | `high` / `medium` / `low` |
 | `created_at` | str | ISO 時刻（JST) |

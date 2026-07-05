@@ -188,6 +188,10 @@
             "control-point-weights": 0.5,
             "target-arrow-shape": (e) => (e.data("type") === "same_as" ? "none" : "triangle"),
             "target-arrow-color": (e) => REL_COLORS[e.data("type")] || "#9aa1ab",
+            // contradicts は論理的に対称（両立しない）なので両端矢印で描く。
+            // データ上の from は「対立を提起した側」という来歴として保持している
+            "source-arrow-shape": (e) => (e.data("type") === "contradicts" ? "triangle" : "none"),
+            "source-arrow-color": (e) => REL_COLORS[e.data("type")] || "#9aa1ab",
             "arrow-scale": 1.1,
             opacity: 0.95,
           },
