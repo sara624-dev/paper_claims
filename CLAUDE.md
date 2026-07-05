@@ -54,6 +54,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - データは取り込み単位で git コミットされているので、壊れたら `git log data/` から巻き戻せる
 - ID 空間の上限: claim = c99/論文、question = q-99、relation/link = 9999。個人利用では当面問題ないが、超える場合は `app/models.py` の正規表現と既存データの一括変換が必要
 
+## スケーリングの引き金（この閾値に達したら対応する）
+
+| 兆候 | 対応 |
+|------|------|
+| 1トピックの照合候補が **200クレーム超**（取り込み報告の候補数で監視） | 候補絞り込みの段階化（キーワードタグ or 埋め込み検索）を導入 |
+| トピックが広くなりすぎて照合が雑になる | **トピック分割手順**: (1) topics.json に新トピック追加 → (2) 対象論文の `topics` を付け替え → (3) 問いの `topics` も更新 → (4) validate + build_index。クレームは動かさない（論文単位で付け替える） |
+| `relations.json` が **200KB 超** | JSONL（1行1関係・追記only）へ移行（storage.py のローダ変更 + 変換スクリプト。ID・スキーマは不変） |
+| 低confidenceの関係・リンクが溜まる | gardener 型の定期再検証スキルを導入（created_at + confidence で古い低確信判定を対象化） |
+
 ## 最重要: JSON スキーマ（Claude 連携仕様の本体）
 
 クレームの抽出・照合・紐付けは Web UI ではなく **Claude Code がこの JSON を直接読み書き**して行う。実例は `tests/fixtures/data/` にある。
@@ -117,6 +126,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `id` | str | `q-NN`（2桁連番） |
 | `text_ja` | str | 問いの文面（必須） |
 | `type` | str | `closed`（判定型 = yes/no）/ `open`（記述型 = what/how） |
+| `status` | str | `open`（探究中・既定）/ `settled`（決着）/ `archived`（保留）。**取り込み時の回答性判定は open のみ対象** |
 | `topics` | list[str] | 対象トピック（1件以上必須。取り込み時の照合スコープ） |
 | `notes` / `created_at` | str | メモ / ISO 時刻（JST） |
 

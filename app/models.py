@@ -31,6 +31,9 @@ PAPER_SOURCES = ("arxiv", "pdf")
 # 問いの型: closed = 判定型（yes/no）/ open = 記述型（what/how）
 QUESTION_TYPES = ("closed", "open")
 
+# 問いのライフサイクル。取り込み時の回答性判定は open のみが対象
+QUESTION_STATUSES = ("open", "settled", "archived")
+
 # 問いへの立場（判定型の問いのみ。記述型は answer_ja が答えそのもの）
 STANCES = ("affirms", "denies", "qualifies")
 
@@ -45,6 +48,7 @@ KIND_LABELS_JA = {"experimental": "実験的", "theoretical": "理論的", "opin
 CONFIDENCE_LABELS_JA = {"high": "高", "medium": "中", "low": "低"}
 QUESTION_TYPE_LABELS_JA = {"closed": "判定型", "open": "記述型"}
 STANCE_LABELS_JA = {"affirms": "肯定", "denies": "否定", "qualifies": "条件付き"}
+QUESTION_STATUS_LABELS_JA = {"open": "探究中", "settled": "決着", "archived": "保留"}
 
 # ===== ID 形式 =====
 
@@ -247,6 +251,7 @@ class Question(BaseModel):
     id: str
     text_ja: str
     type: str  # closed（判定型）/ open（記述型）
+    status: str = "open"  # open（探究中）/ settled（決着）/ archived（保留）
     topics: list[str] = Field(default_factory=list)
     notes: str = ""
     created_at: str
@@ -270,6 +275,13 @@ class Question(BaseModel):
     def _valid_type(cls, v: str) -> str:
         if v not in QUESTION_TYPES:
             raise ValueError(f"type は {QUESTION_TYPES} のいずれか: {v}")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def _valid_status(cls, v: str) -> str:
+        if v not in QUESTION_STATUSES:
+            raise ValueError(f"status は {QUESTION_STATUSES} のいずれか: {v}")
         return v
 
     @field_validator("topics")

@@ -25,8 +25,12 @@ allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion, Bash(ls *), Bash(
 
 ### 1. 登録
 
-- `data/questions.json` に追記。id は `q-NN`（既存最大+1、2桁）
+- `data/questions.json` に追記。id は `q-NN`（既存最大+1、2桁）、`status` は `open`
 - `created_at` は `TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M:%S+09:00`
+
+**ステータス変更**: 「q-01 は決着にして」「この問いは保留」のような指示では登録せず、
+該当の問いの `status` を `settled`（決着）/ `archived`（保留）/ `open`（再開）に更新する。
+open 以外の問いは以降の /paper-import で回答性判定の対象外になる（証拠の自動蓄積が止まる）。
 
 ### 2. 遡及マッピング
 

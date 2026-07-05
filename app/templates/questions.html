@@ -13,6 +13,7 @@
     <li class="card card--question">
       <p class="claimline">
         <span class="badge">{{ QUESTION_TYPE_LABELS[q.type] }}</span>
+        <span class="badge badge--status-{{ q.status }}">{{ QUESTION_STATUS_LABELS[q.status] }}</span>
         <code class="claimid">{{ q.id }}</code>
         {% for t in q.topics %}<span class="tag">{{ t }}</span>{% endfor %}
       </p>

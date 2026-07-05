@@ -86,6 +86,10 @@ def test_questions_list_and_detail(client: TestClient) -> None:
     assert q1["type"] == "closed"
     assert q1["link_count"] == 2
     assert q1["stance_counts"] == {"affirms": 2, "denies": 0, "qualifies": 0}
+    # status は明示（q-01）でも省略（q-02 → 既定値 open）でも読める
+    assert q1["status"] == "open"
+    q2 = next(q for q in body["questions"] if q["id"] == "q-02")
+    assert q2["status"] == "open"
 
     detail = client.get("/api/questions/q-02").json()
     assert len(detail["links"]) == 1

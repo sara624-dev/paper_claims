@@ -175,6 +175,9 @@ code { font-family: var(--mono); font-size: 0.85em; background: rgba(0,0,0,0.06)
   font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
   background: rgba(0,0,0,0.06); color: var(--tx-2);
 }
+.badge--status-open { background: #e5eaf6; color: #33518e; }
+.badge--status-settled { background: #e0f0e7; color: #1d6b46; }
+.badge--status-archived { background: rgba(0,0,0,0.06); color: var(--tx-2); }
 .stance--affirms { background: #e0f0e7; color: #1d6b46; }
 .stance--denies { background: #f8e2e0; color: #a33630; }
 .stance--qualifies { background: #f4ead3; color: #8a6420; }

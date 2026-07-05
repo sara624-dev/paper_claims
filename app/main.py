@@ -18,6 +18,7 @@ from . import config, graph, storage
 from .models import (
     CONFIDENCE_LABELS_JA,
     KIND_LABELS_JA,
+    QUESTION_STATUS_LABELS_JA,
     QUESTION_TYPE_LABELS_JA,
     RELATION_LABELS_JA,
     STANCE_LABELS_JA,
@@ -35,6 +36,7 @@ templates.env.globals.update(
     KIND_LABELS=KIND_LABELS_JA,
     CONFIDENCE_LABELS=CONFIDENCE_LABELS_JA,
     QUESTION_TYPE_LABELS=QUESTION_TYPE_LABELS_JA,
+    QUESTION_STATUS_LABELS=QUESTION_STATUS_LABELS_JA,
     STANCE_LABELS=STANCE_LABELS_JA,
     paper_hue=graph.paper_hue,
 )
@@ -303,11 +305,13 @@ def page_graph(
 
 @app.get("/questions", response_class=HTMLResponse)
 def page_questions(request: Request) -> HTMLResponse:
-    """問いダッシュボード。"""
+    """問いダッシュボード（探究中を先頭に表示）。"""
     vault = storage.load_vault()
+    status_order = {"open": 0, "settled": 1, "archived": 2}
+    ordered = sorted(vault.questions, key=lambda q: (status_order.get(q.status, 9), q.id))
     questions = [
         {**_question_summary(vault, q), "links": _question_links_joined(vault, q.id)}
-        for q in vault.questions
+        for q in ordered
     ]
     return templates.TemplateResponse(
         request, "questions.html", {"nav": "questions", "questions": questions}

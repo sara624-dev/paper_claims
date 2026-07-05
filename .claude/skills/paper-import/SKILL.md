@@ -106,8 +106,10 @@ grep '<topic-id>' data/claims_index.jsonl
 
 ### 6.5 オープンな問いへの回答性判定
 
-`data/questions.json` を読み、この論文のトピックに合致する問いがあれば、新規クレームごとに
-「この問いに直接答えるか」を判定する。答えるものは `data/question_links.json` に追記:
+`data/questions.json` を読み、**`status` が `open` の問い**のうちこの論文のトピックに合致するものについて、
+新規クレームごとに「この問いに直接答えるか」を判定する（settled / archived の問いは判定しない —
+問い数が増えても取り込みコストが膨らまないためのライフサイクル制御）。答えるものは
+`data/question_links.json` に追記:
 
 - `answer_ja` 必須（このクレームが問いに与える答え・一文）
 - `stance` は判定型（closed）の問いのみ: `affirms` / `denies` / `qualifies`。記述型（open）では省略
