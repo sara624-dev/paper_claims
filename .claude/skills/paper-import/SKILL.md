@@ -99,9 +99,11 @@ grep '<topic-id>' data/claims_index.jsonl
 
 ```bash
 uv run python scripts/build_index.py && uv run python scripts/validate.py
+uv run python scripts/verify_quotes.py <paper_id>   # quote が PDF 本文に実在するかの機械検証
 ```
 
 エラーが出たら自分で修正して再実行する。通るまで完了としない。
+verify_quotes が NG のクレームは**捏造引用の疑い**なので、PDF を読み直して quote を原文どおりに直すこと（要約・言い換えは不可）。
 
 ### 9. コミット
 
