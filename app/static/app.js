@@ -65,7 +65,10 @@
   document.getElementById("sheet-close").addEventListener("click", closeSheet);
   backdrop.addEventListener("click", closeSheet);
 
-  const url = "/api/graph" + (boot.initialTopic ? "?topic=" + encodeURIComponent(boot.initialTopic) : "");
+  const params = new URLSearchParams();
+  if (boot.questionId) params.set("question", boot.questionId);
+  else if (boot.initialTopic) params.set("topic", boot.initialTopic);
+  const url = "/api/graph" + (params.size ? "?" + params.toString() : "");
   fetch(url)
     .then((r) => r.json())
     .then(init)
@@ -134,6 +137,16 @@
             "text-max-width": CARD_W - 22,
             "text-valign": "center",
             "text-halign": "center",
+          },
+        },
+        {
+          // 問いレンズ時: stance で枠色（肯定=緑 / 否定=赤 / 条件付き=琥珀）
+          selector: "node:childless[stance]",
+          style: {
+            "border-width": 2.5,
+            "border-color": (n) =>
+              ({ affirms: "#3fbc7e", denies: "#e85950", qualifies: "#d99a2b" })[n.data("stance")] ||
+              "#46516a",
           },
         },
         {
@@ -262,6 +275,21 @@
       const m = c.evidence.metrics[0];
       const rest = c.evidence.metrics.length > 1 ? ` 他${c.evidence.metrics.length - 1}件` : "";
       out.push(el("p", "confnote", `結果: ${m.name} ${m.value}` + (m.baseline ? `（baseline ${m.baseline}）` : "") + rest));
+    }
+
+    if (c.questions && c.questions.length) {
+      out.push(el("p", "sheet__kicker", "この主張が答える問い"));
+      const qlist = el("ul", "answers");
+      for (const ql of c.questions) {
+        const item = el("li", "answer" + (ql.stance ? " answer--" + ql.stance : ""));
+        item.append(el("p", "answer__q", ql.text_ja));
+        const ans = el("p", "answer__text");
+        if (ql.stance) ans.append(el("span", "answer__stance", boot.stanceLabels[ql.stance] || ql.stance));
+        ans.append(document.createTextNode(ql.answer_ja));
+        item.append(ans);
+        qlist.append(item);
+      }
+      out.push(qlist);
     }
 
     if (c.relations.length) {

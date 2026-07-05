@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 論文（主に arXiv）からクレームを抽出し、根拠・実験条件と紐づけて保存。論文間で 支持 / 反証 / 同一 / 拡張 の関係を張り、トピックごとの研究状況（コンセンサス・係争点）を一望する。
 
 - **取り込み（抽出・照合・紐付け）は Claude Code の `/paper-import` スキルが行う**（`.claude/skills/paper-import/SKILL.md`）
+- **問いの登録・遡及マッピングは `/paper-question`**（`.claude/skills/paper-question/SKILL.md`）。以降の取り込みで答えとなる主張が自動でリンクされる
 - **Web UI は閲覧専用**（FastAPI + JSONファイル + Cytoscape.js、ビルドレス）。書き込みエンドポイントは持たない
 - Raspberry Pi 上で常時稼働、認証なし LAN 利用（ポート **8124**）。iPhone ファースト
 
@@ -95,6 +96,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### `data/topics.json` — `{"topics": [...]}`
 
 `{id（kebab-case slug）, name_ja, description, created_at}`。論文→トピック対応は paper 側の `topics` に持つ。
+
+### `data/questions.json` — `{"questions": [...]}` ユーザーが立てた問い
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `id` | str | `q-NN`（2桁連番） |
+| `text_ja` | str | 問いの文面（必須） |
+| `type` | str | `closed`（判定型 = yes/no）/ `open`（記述型 = what/how） |
+| `topics` | list[str] | 対象トピック（1件以上必須。取り込み時の照合スコープ） |
+| `notes` / `created_at` | str | メモ / ISO 時刻（JST） |
+
+### `data/question_links.json` — `{"question_links": [...]}` 問い↔クレーム
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `id` | str | `ql-NNNN`（4桁連番） |
+| `question_id` / `claim_id` | str | 実在する問い / クレームを指すこと |
+| `answer_ja` | str | **このクレームが問いに与える答え**（必須・一文。「はい」だけは不可） |
+| `stance` | str \| null | **判定型のみ**: `affirms`（肯定）/ `denies`（否定）/ `qualifies`（条件付き）。記述型では null |
+| `rationale_ja` | str | 判断根拠（必須） |
+| `confidence` / `created_at` | str | `high`/`medium`/`low` / ISO 時刻（JST） |
+
+制約: 同一 (question, claim) の重複禁止。stance の有無は問いの type と整合すること（validate.py が強制）。
+記述型の「回答候補のクラスタ」は別台帳を持たず、リンクされたクレーム間の既存関係（supports / same_as / contradicts）から導出する（設計上の決定）。
 
 ### `data/claims_index.jsonl` — 派生インデックス（手編集禁止）
 

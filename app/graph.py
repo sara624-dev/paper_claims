@@ -29,19 +29,29 @@ def _paper_short(paper: Paper) -> str:
     return f"{first_author}+{' ' + str(paper.year) if paper.year else ''}"
 
 
-def build_elements(vault: Vault, topic: str | None = None) -> dict[str, Any]:
+def build_elements(
+    vault: Vault, topic: str | None = None, question: str | None = None
+) -> dict[str, Any]:
     """Cytoscape.js に渡す elements とメタ情報を返す。
 
     Args:
         vault: 読み込み済みデータ。
         topic: 指定時はそのトピックを持つ論文のクレームに絞る。
+        question: 指定時はその問いにリンクされたクレームに絞る（問いレンズ）。
+            各クレームノードに stance / answer が付き、フロントが枠色に使う。
 
     Returns:
         ``{"elements": {"nodes": [...], "edges": [...]}, "meta": {...}}``。
         nodes には論文（compound 親、``order`` = 時系列カラム位置）とクレーム
         （``parent`` + ``seq`` = カラム内の行位置）の両方が入る。
     """
+    lens: dict[str, Any] | None = None  # claim_id -> link（問いレンズ時のみ）
+    if question is not None:
+        lens = {link.claim_id: link for link in vault.links_for_question(question)}
+
     papers = vault.papers if topic is None else [p for p in vault.papers if topic in p.topics]
+    if lens is not None:
+        papers = [p for p in papers if any(c.id in lens for c in p.claims)]
     # 左から時系列（年 → 取り込み日 → id）でカラムを並べる
     papers = sorted(papers, key=lambda p: (p.year or 9999, p.imported_at, p.id))
 
@@ -61,25 +71,27 @@ def build_elements(vault: Vault, topic: str | None = None) -> dict[str, Any]:
                 }
             }
         )
-        for seq, claim in enumerate(paper.claims):
+        claims = paper.claims if lens is None else [c for c in paper.claims if c.id in lens]
+        for seq, claim in enumerate(claims):
             claim_count += 1
             claim_ids.add(claim.id)
-            nodes.append(
-                {
-                    "data": {
-                        "id": claim.id,
-                        "parent": paper.id,
-                        "label": _short(claim.summary_ja),
-                        "summary": claim.summary_ja,
-                        "paper_id": paper.id,
-                        "paper_title": paper.title,
-                        "kind": claim.kind,
-                        "confidence": claim.confidence,
-                        "order": order,
-                        "seq": seq,
-                    }
-                }
-            )
+            data: dict[str, Any] = {
+                "id": claim.id,
+                "parent": paper.id,
+                "label": _short(claim.summary_ja),
+                "summary": claim.summary_ja,
+                "paper_id": paper.id,
+                "paper_title": paper.title,
+                "kind": claim.kind,
+                "confidence": claim.confidence,
+                "order": order,
+                "seq": seq,
+            }
+            if lens is not None:
+                link = lens[claim.id]
+                data["stance"] = link.stance
+                data["answer"] = link.answer_ja
+            nodes.append({"data": data})
 
     edges = [
         {
@@ -100,6 +112,7 @@ def build_elements(vault: Vault, topic: str | None = None) -> dict[str, Any]:
         "elements": {"nodes": nodes, "edges": edges},
         "meta": {
             "topic": topic,
+            "question": question,
             "node_count": claim_count,
             "edge_count": len(edges),
             "paper_count": len(papers),

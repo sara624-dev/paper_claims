@@ -32,6 +32,19 @@
     </table>
     {% endif %}
 
+    {% if questions %}
+    <h2 class="sectionhead">この主張が答える問い</h2>
+    <ul class="answers">
+      {% for ql in questions %}
+      <li class="answer {% if ql.stance %}answer--{{ ql.stance }}{% endif %}">
+        <a class="answer__q" href="/questions">{{ ql.text_ja }}</a>
+        <p class="answer__text">{% if ql.stance %}<span class="answer__stance">{{ STANCE_LABELS[ql.stance] }}</span>{% endif %}{{ ql.answer_ja }}</p>
+        <p class="answer__src">{{ ql.rationale_ja }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
     <h2 class="sectionhead">関係 <span class="sectionhead__count">{{ relations|length }}</span></h2>
     {% if relations %}
     <ul class="rels rels--detail">

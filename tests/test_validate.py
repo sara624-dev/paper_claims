@@ -93,3 +93,41 @@ def test_detects_missing_rationale(data_dir: Path) -> None:
     _write_relations(data_dir, raw)
     errors = validate_mod.validate()
     assert any("rationale_ja" in e for e in errors)
+
+
+def _question_links(data_dir: Path) -> dict:
+    return json.loads((data_dir / "question_links.json").read_text(encoding="utf-8"))
+
+
+def _write_question_links(data_dir: Path, raw: dict) -> None:
+    (data_dir / "question_links.json").write_text(
+        json.dumps(raw, ensure_ascii=False), encoding="utf-8"
+    )
+
+
+def test_detects_dangling_question_link(data_dir: Path) -> None:
+    raw = _question_links(data_dir)
+    raw["question_links"][0]["claim_id"] = "arxiv-9999.99999-c01"
+    raw["question_links"][2]["question_id"] = "q-99"
+    _write_question_links(data_dir, raw)
+    errors = validate_mod.validate()
+    assert any("存在しない claim" in e for e in errors)
+    assert any("存在しない question" in e for e in errors)
+
+
+def test_detects_stance_type_mismatch(data_dir: Path) -> None:
+    raw = _question_links(data_dir)
+    raw["question_links"][0]["stance"] = None  # closed の問いなのに stance なし
+    raw["question_links"][2]["stance"] = "affirms"  # open の問いなのに stance あり
+    _write_question_links(data_dir, raw)
+    errors = validate_mod.validate()
+    assert any("stance 必須" in e for e in errors)
+    assert any("stance は不可" in e for e in errors)
+
+
+def test_detects_duplicate_question_link(data_dir: Path) -> None:
+    raw = _question_links(data_dir)
+    raw["question_links"].append(dict(raw["question_links"][0], id="ql-0009"))
+    _write_question_links(data_dir, raw)
+    errors = validate_mod.validate()
+    assert any("(question, claim) のリンクが重複" in e for e in errors)

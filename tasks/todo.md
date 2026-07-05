@@ -51,6 +51,24 @@
   - [x] グラフAPIで全エッジ種別の出力確認
 - [x] データのコミット
 
+## 機能拡張: 問い駆動マッピング（2026-07-05 承認済み設計）
+
+設計: 問い type = closed(判定型) | open(記述型)。QuestionLink は answer_ja 必須、
+stance（肯定/否定/条件付き）は判定型のみ。記述型の回答クラスタは既存のクレーム間関係から導出。
+
+- [x] models.py: Question / QuestionLink + enum（QUESTION_TYPES / STANCES）
+- [x] config.py / storage.py: questions.json / question_links.json の読み込み
+- [x] validate.py: 参照整合性 + stance⇔type 整合 + 重複リンク検出
+- [x] graph.py: 問いレンズ（linked claims のみ + stance をノードに付与）
+- [x] main.py: /api/questions, /api/questions/{id}, /api/graph?question=, /questions ページ
+- [x] templates/app.js: 問いダッシュボード、脈図の問いバナー + stance枠色、シート/詳細に「答える問い」
+- [x] スキル: /paper-question 新設、/paper-import に手順6.5（問いへの回答性判定）
+- [x] CLAUDE.md スキーマ表更新
+- [x] tests: fixtures + storage/validate/api（計26件）
+- [x] E2E: 実データで問い2件（q-01判定型: 否定3/条件付き2、q-02記述型: 答え2件）登録・スクリーンショット確認
+- [x] commit & push
+- 併せて完了: quote機械検証 scripts/verify_quotes.py（28件全照合OK）、GitHub私有リポ https://github.com/sara624-dev/paper_claims
+
 ## Review
 
 - **成果**: 計画どおり MVP 完成。実論文4本・クレーム28件・関係7件（supports 4 / contradicts 2 / extends 1）が入った状態で全チェック通過。サーバ再起動なしのデータ反映（mtimeキャッシュ）も実証

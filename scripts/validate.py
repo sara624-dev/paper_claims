@@ -15,7 +15,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pydantic import ValidationError
 
 from app import config
-from app.models import CLAIM_ID_RE, SYMMETRIC_RELATION_TYPES, Paper, Relation, Topic
+from app.models import (
+    CLAIM_ID_RE,
+    SYMMETRIC_RELATION_TYPES,
+    Paper,
+    Question,
+    QuestionLink,
+    Relation,
+    Topic,
+)
 
 
 def _fmt_validation_error(prefix: str, e: ValidationError) -> list[str]:
@@ -97,6 +105,51 @@ def validate() -> list[str]:
             errors.append(
                 f"{rel.id}: {rel.type} は対称関係のため from < to（辞書順）に正規化すること"
             )
+
+    # --- questions.json ---
+    questions: list[Question] = []
+    questions_raw = _read(config.questions_file(), {"questions": []}, errors)
+    for i, raw in enumerate(questions_raw.get("questions", [])):
+        try:
+            questions.append(Question.model_validate(raw))
+        except ValidationError as e:
+            errors += _fmt_validation_error(f"questions.json[{i}]", e)
+    question_by_id = {q.id: q for q in questions}
+    if len(question_by_id) != len(questions):
+        errors.append("questions.json: question id が重複している")
+    for q in questions:
+        for topic in q.topics:
+            if topic not in topic_ids:
+                errors.append(f"{q.id}: 未定義トピック {topic}（topics.json に追加すること）")
+
+    # --- question_links.json ---
+    links: list[QuestionLink] = []
+    links_raw = _read(config.question_links_file(), {"question_links": []}, errors)
+    for i, raw in enumerate(links_raw.get("question_links", [])):
+        try:
+            links.append(QuestionLink.model_validate(raw))
+        except ValidationError as e:
+            errors += _fmt_validation_error(f"question_links.json[{i}]", e)
+
+    link_ids: set[str] = set()
+    seen_pairs: set[tuple[str, str]] = set()
+    for link in links:
+        if link.id in link_ids:
+            errors.append(f"link id が重複: {link.id}")
+        link_ids.add(link.id)
+        if link.claim_id not in claim_ids:
+            errors.append(f"{link.id}: 存在しない claim を参照している: {link.claim_id}")
+        question = question_by_id.get(link.question_id)
+        if question is None:
+            errors.append(f"{link.id}: 存在しない question を参照している: {link.question_id}")
+        elif question.type == "closed" and link.stance is None:
+            errors.append(f"{link.id}: 判定型の問い {question.id} へのリンクは stance 必須")
+        elif question.type == "open" and link.stance is not None:
+            errors.append(f"{link.id}: 記述型の問い {question.id} へのリンクに stance は不可")
+        pair = (link.question_id, link.claim_id)
+        if pair in seen_pairs:
+            errors.append(f"{link.id}: 同一 (question, claim) のリンクが重複")
+        seen_pairs.add(pair)
 
     return errors
 

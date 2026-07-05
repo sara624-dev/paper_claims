@@ -18,9 +18,13 @@ from . import config, graph, storage
 from .models import (
     CONFIDENCE_LABELS_JA,
     KIND_LABELS_JA,
+    QUESTION_TYPE_LABELS_JA,
     RELATION_LABELS_JA,
+    STANCE_LABELS_JA,
+    STANCES,
     Claim,
     Paper,
+    Question,
 )
 
 app = FastAPI(title="論脈 RONMYAKU")
@@ -30,6 +34,8 @@ templates.env.globals.update(
     RELATION_LABELS=RELATION_LABELS_JA,
     KIND_LABELS=KIND_LABELS_JA,
     CONFIDENCE_LABELS=CONFIDENCE_LABELS_JA,
+    QUESTION_TYPE_LABELS=QUESTION_TYPE_LABELS_JA,
+    STANCE_LABELS=STANCE_LABELS_JA,
     paper_hue=graph.paper_hue,
 )
 
@@ -99,6 +105,57 @@ def _find_claim(vault: storage.Vault, claim_id: str) -> tuple[Paper, Claim]:
         raise HTTPException(status_code=404, detail=f"claim not found: {claim_id}")
     claim = next(c for c in paper.claims if c.id == claim_id)
     return paper, claim
+
+
+def _question_summary(vault: storage.Vault, question: Question) -> dict[str, Any]:
+    """一覧表示用の問いサマリ（stance 集計つき）を返す。"""
+    links = vault.links_for_question(question.id)
+    return {
+        **question.model_dump(),
+        "link_count": len(links),
+        "stance_counts": {s: sum(1 for x in links if x.stance == s) for s in STANCES},
+    }
+
+
+def _question_links_joined(vault: storage.Vault, question_id: str) -> list[dict[str, Any]]:
+    """問いのリンク一覧を、クレーム・論文情報を join して時系列順で返す。"""
+    result = []
+    for link in vault.links_for_question(question_id):
+        paper = vault.claim_paper(link.claim_id)
+        claim = None
+        if paper is not None:
+            claim = next((c for c in paper.claims if c.id == link.claim_id), None)
+        result.append(
+            {
+                **link.model_dump(),
+                "claim_summary": claim.summary_ja if claim else "(不明)",
+                "paper_id": paper.id if paper else "",
+                "paper_title": paper.title if paper else "",
+                "year": paper.year if paper else None,
+            }
+        )
+    result.sort(key=lambda x: (x["year"] or 9999, x["claim_id"]))
+    return result
+
+
+def _claim_questions(vault: storage.Vault, claim_id: str) -> list[dict[str, Any]]:
+    """クレームが答えている問いの一覧（answer_ja / stance つき）を返す。"""
+    result = []
+    for link in vault.links_for_claim(claim_id):
+        question = vault.question_by_id(link.question_id)
+        if question is None:
+            continue
+        result.append(
+            {
+                "question_id": question.id,
+                "text_ja": question.text_ja,
+                "type": question.type,
+                "answer_ja": link.answer_ja,
+                "stance": link.stance,
+                "rationale_ja": link.rationale_ja,
+            }
+        )
+    return result
 
 
 # ===== API（すべて read-only GET）=====
@@ -172,31 +229,55 @@ def api_claims(
 
 @app.get("/api/claims/{claim_id}")
 def api_claim_detail(claim_id: str) -> dict[str, Any]:
-    """クレーム詳細 + 関係一覧（相手側クレーム・論文を join 済み）。"""
+    """クレーム詳細 + 関係一覧（相手側クレーム・論文を join 済み）+ 答える問い。"""
     vault = storage.load_vault()
     paper, claim = _find_claim(vault, claim_id)
     return {
         **claim.model_dump(),
         "paper": _paper_summary(paper),
         "relations": _claim_relations(vault, claim_id),
+        "questions": _claim_questions(vault, claim_id),
     }
 
 
 @app.get("/api/graph")
-def api_graph(topic: str | None = None) -> dict[str, Any]:
-    """Cytoscape.js elements 形式のグラフデータ。``?topic=`` で絞り込み。"""
+def api_graph(topic: str | None = None, question: str | None = None) -> dict[str, Any]:
+    """Cytoscape.js elements 形式のグラフデータ。``?topic=`` / ``?question=`` で絞り込み。"""
     vault = storage.load_vault()
-    return graph.build_elements(vault, topic)
+    return graph.build_elements(vault, topic, question)
+
+
+@app.get("/api/questions")
+def api_questions() -> dict[str, Any]:
+    """問い一覧（stance 集計つき）。"""
+    vault = storage.load_vault()
+    return {"questions": [_question_summary(vault, q) for q in vault.questions]}
+
+
+@app.get("/api/questions/{question_id}")
+def api_question_detail(question_id: str) -> dict[str, Any]:
+    """問い詳細 + リンク一覧（クレーム・論文を join 済み・時系列順）。"""
+    vault = storage.load_vault()
+    question = vault.question_by_id(question_id)
+    if question is None:
+        raise HTTPException(status_code=404, detail=f"question not found: {question_id}")
+    return {
+        **_question_summary(vault, question),
+        "links": _question_links_joined(vault, question_id),
+    }
 
 
 # ===== 画面 =====
 
 
 @app.get("/", response_class=HTMLResponse)
-def page_graph(request: Request, topic: str | None = None) -> HTMLResponse:
-    """メイン: クレームグラフビュー。"""
+def page_graph(
+    request: Request, topic: str | None = None, question: str | None = None
+) -> HTMLResponse:
+    """メイン: クレームグラフビュー（トピック絞り込み / 問いレンズ）。"""
     vault = storage.load_vault()
     initial_topic = topic if any(t.id == topic for t in vault.topics) else None
+    lens_question = vault.question_by_id(question) if question else None
     return templates.TemplateResponse(
         request,
         "graph.html",
@@ -204,16 +285,32 @@ def page_graph(request: Request, topic: str | None = None) -> HTMLResponse:
             "nav": "graph",
             "topics": vault.topics,
             "initial_topic": initial_topic,
+            "lens_question": lens_question,
             "bootstrap_json": _json_for_script(
                 {
                     "initialTopic": initial_topic,
+                    "questionId": lens_question.id if lens_question else None,
                     "relationLabels": RELATION_LABELS_JA,
                     "kindLabels": KIND_LABELS_JA,
                     "confidenceLabels": CONFIDENCE_LABELS_JA,
+                    "stanceLabels": STANCE_LABELS_JA,
                 }
             ),
             "data_errors": vault.errors,
         },
+    )
+
+
+@app.get("/questions", response_class=HTMLResponse)
+def page_questions(request: Request) -> HTMLResponse:
+    """問いダッシュボード。"""
+    vault = storage.load_vault()
+    questions = [
+        {**_question_summary(vault, q), "links": _question_links_joined(vault, q.id)}
+        for q in vault.questions
+    ]
+    return templates.TemplateResponse(
+        request, "questions.html", {"nav": "questions", "questions": questions}
     )
 
 
@@ -262,5 +359,6 @@ def page_claim_detail(request: Request, claim_id: str) -> HTMLResponse:
             "paper": paper,
             "claim": claim,
             "relations": _claim_relations(vault, claim_id),
+            "questions": _claim_questions(vault, claim_id),
         },
     )

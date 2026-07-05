@@ -89,11 +89,22 @@ grep '<topic-id>' data/claims_index.jsonl
 - **確信の持てない関係は作らない**（偽リンクより欠落を許容）。迷ったら relation の `confidence: low` ではなく「作らない」を選ぶ
 - 関係の向きは「from が to を 支持/反証/拡張 する」= 新しい論文が from になるのが通常
 
+### 6.5 オープンな問いへの回答性判定
+
+`data/questions.json` を読み、この論文のトピックに合致する問いがあれば、新規クレームごとに
+「この問いに直接答えるか」を判定する。答えるものは `data/question_links.json` に追記:
+
+- `answer_ja` 必須（このクレームが問いに与える答え・一文）
+- `stance` は判定型（closed）の問いのみ: `affirms` / `denies` / `qualifies`。記述型（open）では省略
+- `rationale_ja` 必須。**確信の持てないリンクは作らない**（関係judgmentと同じ原則）
+- id は `ql-NNNN`（既存最大+1）
+
 ### 7. 書き込み
 
 1. `data/papers/<paper_id>.json` を新規作成（スキーマは CLAUDE.md の表・`tests/fixtures/data/` の実例に従う。`imported_at` は `TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M:%S+09:00`）
 2. 関係があれば `data/relations.json` に Edit で追記（`rel-NNNN` は既存最大値+1）
-3. 新規トピックは `data/topics.json` に追記
+3. 問いへのリンクがあれば `data/question_links.json` に追記（手順6.5）
+4. 新規トピックは `data/topics.json` に追記
 
 ### 8. 検証（必須・スキップ不可）
 
@@ -114,8 +125,9 @@ git add data/ && git commit -m "import: <paper_id> <短いタイトル>（クレ
 ### 10. 報告
 
 - 論文タイトル・抽出クレーム数（kind別）・作成した関係数（type別、相手論文名つき）
+- 問いへのリンクを作成した場合はその内訳（問い×answer_ja）
 - グラフ URL: `http://<Piホスト>:8124/?topic=<topic-id>`
-- 判断に迷って**作らなかった**関係候補があれば、その旨を一言添える（ユーザーが手で判断できるように）
+- 判断に迷って**作らなかった**関係・リンク候補があれば、その旨を一言添える（ユーザーが手で判断できるように）
 
 ## 品質基準（要約）
 

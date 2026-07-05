@@ -80,10 +80,45 @@ def test_graph_full_and_topic_filter(client: TestClient) -> None:
     assert body["meta"]["edge_count"] == 0
 
 
+def test_questions_list_and_detail(client: TestClient) -> None:
+    body = client.get("/api/questions").json()
+    q1 = next(q for q in body["questions"] if q["id"] == "q-01")
+    assert q1["type"] == "closed"
+    assert q1["link_count"] == 2
+    assert q1["stance_counts"] == {"affirms": 2, "denies": 0, "qualifies": 0}
+
+    detail = client.get("/api/questions/q-02").json()
+    assert len(detail["links"]) == 1
+    link = detail["links"][0]
+    assert link["stance"] is None
+    assert link["claim_id"] == "arxiv-2102.00002-c02"
+    assert link["paper_title"].startswith("Self-Correction")
+    assert client.get("/api/questions/q-99").status_code == 404
+
+
+def test_graph_question_lens(client: TestClient) -> None:
+    body = client.get("/api/graph", params={"question": "q-01"}).json()
+    assert body["meta"]["node_count"] == 2  # リンクされたクレームのみ
+    assert body["meta"]["paper_count"] == 2
+    claims = [n["data"] for n in body["elements"]["nodes"] if "parent" in n["data"]]
+    assert all(c["stance"] == "affirms" and c["answer"] for c in claims)
+    # 両端がレンズ内にある関係だけ残る（c01同士の supports / same_as）
+    assert body["meta"]["edge_count"] == 2
+
+
+def test_claim_detail_includes_questions(client: TestClient) -> None:
+    body = client.get("/api/claims/arxiv-2102.00002-c02").json()
+    assert len(body["questions"]) == 1
+    assert body["questions"][0]["question_id"] == "q-02"
+    assert body["questions"][0]["stance"] is None
+
+
 def test_pages_render(client: TestClient) -> None:
     for path in (
         "/",
         "/?topic=cot-reasoning",
+        "/?question=q-01",
+        "/questions",
         "/papers",
         "/papers/arxiv-2101.00001",
         "/claims/arxiv-2102.00002-c02",

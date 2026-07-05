@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}問い — 論脈 RONMYAKU{% endblock %}
+
+{% block content %}
+<main class="container">
+
+  <h1 class="pagehead">問い</h1>
+  <p class="pagelead">自分で立てた問いに、取り込んだ論文の主張が答えとして積み上がる。</p>
+
+  {% if questions %}
+  <ul class="cards">
+    {% for q in questions %}
+    <li class="card card--question">
+      <p class="claimline">
+        <span class="badge">{{ QUESTION_TYPE_LABELS[q.type] }}</span>
+        <code class="claimid">{{ q.id }}</code>
+        {% for t in q.topics %}<span class="tag">{{ t }}</span>{% endfor %}
+      </p>
+      <h2 class="card__title">{{ q.text_ja }}</h2>
+
+      {% if q.type == "closed" %}
+      <p class="stancebar">
+        <span class="stance stance--affirms">肯定 {{ q.stance_counts.affirms }}</span>
+        <span class="stance stance--denies">否定 {{ q.stance_counts.denies }}</span>
+        <span class="stance stance--qualifies">条件付き {{ q.stance_counts.qualifies }}</span>
+      </p>
+      {% else %}
+      <p class="stancebar"><span class="stance">答え {{ q.link_count }}件</span></p>
+      {% endif %}
+
+      {% if q.links %}
+      <ul class="answers">
+        {% for l in q.links %}
+        <li class="answer {% if l.stance %}answer--{{ l.stance }}{% endif %}">
+          {% if l.stance %}<span class="answer__stance">{{ STANCE_LABELS[l.stance] }}</span>{% endif %}
+          <a class="answer__text" href="/claims/{{ l.claim_id }}">{{ l.answer_ja }}</a>
+          <p class="answer__src">{{ l.paper_title }}{% if l.year %}（{{ l.year }}）{% endif %}</p>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="confnote">まだ答えとなる主張がありません。論文を取り込むと自動で判定されます。</p>
+      {% endif %}
+
+      <p class="actions actions--tight"><a class="btn btn--ghost" href="/?question={{ q.id }}">脈図で見る</a></p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    <p class="empty__title">まだ問いがありません</p>
+    <p>Claude Code で <code>/paper-question "&lt;問い&gt;" &lt;topic&gt;</code> を実行して登録してください。以降の論文取り込みで、答えとなる主張が自動でここに積み上がります。</p>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}

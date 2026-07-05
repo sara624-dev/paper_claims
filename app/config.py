@@ -37,5 +37,15 @@ def claims_index_file() -> Path:
     return DATA_DIR / "claims_index.jsonl"
 
 
+def questions_file() -> Path:
+    """問い台帳ファイルのパスを返す。"""
+    return DATA_DIR / "questions.json"
+
+
+def question_links_file() -> Path:
+    """問い↔クレームのリンク台帳ファイルのパスを返す。"""
+    return DATA_DIR / "question_links.json"
+
+
 TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"

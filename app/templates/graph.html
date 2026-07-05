@@ -11,12 +11,19 @@
   </div>
   {% endif %}
 
+  {% if lens_question %}
+  <div class="chiprow" aria-label="問いレンズ">
+    <a class="chip" href="/">× 全体に戻る</a>
+    <span class="chip is-active chip--question">問い: {{ lens_question.text_ja }}</span>
+  </div>
+  {% else %}
   <div class="chiprow" role="tablist" aria-label="トピック">
     <a class="chip {% if not initial_topic %}is-active{% endif %}" href="/">全体</a>
     {% for t in topics %}
     <a class="chip {% if initial_topic == t.id %}is-active{% endif %}" href="/?topic={{ t.id }}">{{ t.name_ja }}</a>
     {% endfor %}
   </div>
+  {% endif %}
 
   <div id="cy" aria-label="クレームグラフ"></div>
 

@@ -15,7 +15,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from . import config
-from .models import Paper, Relation, Topic
+from .models import Paper, Question, QuestionLink, Relation, Topic
 
 
 def _read_json(path: Path, default: Any) -> Any:
@@ -53,6 +53,8 @@ def _data_signature() -> tuple:
         tuple(entries),
         _mtime(config.relations_file()),
         _mtime(config.topics_file()),
+        _mtime(config.questions_file()),
+        _mtime(config.question_links_file()),
     )
 
 
@@ -63,6 +65,8 @@ class Vault:
     papers: list[Paper] = field(default_factory=list)
     relations: list[Relation] = field(default_factory=list)
     topics: list[Topic] = field(default_factory=list)
+    questions: list[Question] = field(default_factory=list)
+    question_links: list[QuestionLink] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
     def paper_by_id(self, paper_id: str) -> Paper | None:
@@ -72,6 +76,18 @@ class Vault:
     def claim_paper(self, claim_id: str) -> Paper | None:
         """クレーム ID から所属論文を引く。"""
         return next((p for p in self.papers if any(c.id == claim_id for c in p.claims)), None)
+
+    def question_by_id(self, question_id: str) -> Question | None:
+        """ID で問いを引く。"""
+        return next((q for q in self.questions if q.id == question_id), None)
+
+    def links_for_question(self, question_id: str) -> list[QuestionLink]:
+        """問いに紐づくリンク一覧を返す。"""
+        return [link for link in self.question_links if link.question_id == question_id]
+
+    def links_for_claim(self, claim_id: str) -> list[QuestionLink]:
+        """クレームに紐づくリンク一覧を返す。"""
+        return [link for link in self.question_links if link.claim_id == claim_id]
 
 
 def _load_vault() -> Vault:
@@ -105,6 +121,20 @@ def _load_vault() -> Vault:
             vault.topics.append(Topic.model_validate(raw))
         except ValidationError as e:
             vault.errors.append(f"topics.json: {e.errors()[0]['msg']}")
+
+    for raw in _read_json(config.questions_file(), {"questions": []}).get("questions", []):
+        try:
+            vault.questions.append(Question.model_validate(raw))
+        except ValidationError as e:
+            vault.errors.append(f"questions.json: {e.errors()[0]['msg']}")
+
+    for raw in _read_json(config.question_links_file(), {"question_links": []}).get(
+        "question_links", []
+    ):
+        try:
+            vault.question_links.append(QuestionLink.model_validate(raw))
+        except ValidationError as e:
+            vault.errors.append(f"question_links.json: {e.errors()[0]['msg']}")
 
     return vault
 

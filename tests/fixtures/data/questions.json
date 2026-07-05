@@ -1,0 +1,20 @@
+{
+  "questions": [
+    {
+      "id": "q-01",
+      "text_ja": "段階的プロンプトは大規模モデルの推論を改善するか？",
+      "type": "closed",
+      "topics": ["cot-reasoning"],
+      "notes": "",
+      "created_at": "2026-07-03T09:00:00+09:00"
+    },
+    {
+      "id": "q-02",
+      "text_ja": "モデルの自己修正はどのような条件で機能するか？",
+      "type": "open",
+      "topics": ["self-correction"],
+      "notes": "",
+      "created_at": "2026-07-03T09:00:00+09:00"
+    }
+  ]
+}

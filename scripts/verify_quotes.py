@@ -35,7 +35,15 @@ def pdf_text(paper_id: str, arxiv_id: str | None) -> str | None:
     if not pdf.exists() and arxiv_id:
         pdf.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
-            ["curl", "-sL", "--max-time", "60", f"https://arxiv.org/pdf/{arxiv_id}", "-o", str(pdf)],
+            [
+                "curl",
+                "-sL",
+                "--max-time",
+                "60",
+                f"https://arxiv.org/pdf/{arxiv_id}",
+                "-o",
+                str(pdf),
+            ],
             check=False,
         )
     if not pdf.exists() or pdf.stat().st_size == 0:
@@ -79,7 +87,9 @@ def main() -> int:
         for msg in errors:
             print(f"  - {msg}")
         return 1
-    print(f"OK: {checked} 件の quote すべてが PDF 本文に実在（論文 {len(papers) - len(skipped)} 本）")
+    print(
+        f"OK: {checked} 件の quote すべてが PDF 本文に実在（論文 {len(papers) - len(skipped)} 本）"
+    )
     return 0
 
 
