@@ -39,6 +39,3 @@ def claims_index_file() -> Path:
 
 TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"
-
-# グラフ表示: ノード数がこれを超えたら cose レイアウトを諦めて concentric に切り替える
-GRAPH_COSE_NODE_LIMIT = 500

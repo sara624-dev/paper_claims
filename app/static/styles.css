@@ -28,6 +28,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; padding: 0; }
 body {
   font-family: var(--sans);
@@ -179,12 +180,10 @@ code { font-family: var(--mono); font-size: 0.85em; background: rgba(0,0,0,0.06)
 body.is-graph { background: var(--sumi); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 body.is-graph .masthead { flex: 0 0 auto; }
 .graphwrap { position: relative; flex: 1 1 auto; min-height: 0; }
-#cy { position: absolute; inset: 0; }
+#cy { position: absolute; inset: 52px 0 0; }
 
 .graphwrap .chiprow {
   position: absolute; top: 0; left: 0; right: 0; z-index: 5;
-  background: linear-gradient(to bottom, rgba(25,28,34,0.92), rgba(25,28,34,0));
-  padding-bottom: 18px;
 }
 .graphwrap .chip { background: var(--sumi-2); border-color: #39404d; color: #c6cdd7; }
 .graphwrap .chip.is-active { background: var(--ai); border-color: var(--ai); color: #fff; }

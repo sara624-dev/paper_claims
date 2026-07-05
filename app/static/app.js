@@ -1,6 +1,8 @@
 /* 論脈 RONMYAKU — フロントエンド（ビルドレス・素のJS）
    - 論文一覧の絞り込み（/papers）
    - 脈図の描画・ボトムシート（/）
+   脈図のレイアウトはドメイン構造そのもの: 論文カラム（左→右が時系列）×
+   クレームカードの縦積み。座標はここで決定論的に計算する（物理レイアウト不使用）。
    DOM 生成は textContent ベース（innerHTML にデータを入れない）。 */
 (() => {
   "use strict";
@@ -33,18 +35,19 @@
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const REL_COLORS = {
-    supports: "#2fa26b",
-    contradicts: "#d9463e",
-    same_as: "#4c82d8",
-    extends: "#8a8f98",
+    supports: "#3fbc7e",
+    contradicts: "#e85950",
+    same_as: "#5b93ea",
+    extends: "#9aa1ab",
   };
   const REL_STYLES = { same_as: "dashed", extends: "dotted" };
-  const KIND_SHAPES = {
-    experimental: "ellipse",
-    theoretical: "diamond",
-    opinion: "round-rectangle",
-  };
-  const CONF_WIDTHS = { high: 3, medium: 2.2, low: 1.3 };
+  const CONF_WIDTHS = { high: 3.2, medium: 2.4, low: 1.6 };
+
+  // カラムレイアウトの寸法（クレームカードの座標計算に使う）
+  const CARD_W = 200;
+  const CARD_H = 68;
+  const ROW_H = CARD_H + 26;
+  const COL_W = CARD_W + 110;
 
   const sheet = document.getElementById("sheet");
   const sheetBody = document.getElementById("sheet-body");
@@ -72,76 +75,149 @@
       empty.hidden = false;
     });
 
+  // 日本語はスペースが無く Cytoscape の text-wrap では折り返せないため、
+  // 全角=1 / 半角=0.55 の見なし幅で行を組み、\n を挿入して手動で折り返す
+  function wrapLabel(text, unitsPerLine, maxLines) {
+    const lines = [];
+    let line = "";
+    let width = 0;
+    for (const ch of text) {
+      const w = ch.charCodeAt(0) > 0x2000 ? 1 : 0.55;
+      if (width + w > unitsPerLine && line !== "") {
+        lines.push(line);
+        if (lines.length === maxLines) return lines.join("\n").slice(0, -1) + "…";
+        line = "";
+        width = 0;
+      }
+      line += ch;
+      width += w;
+    }
+    if (line) lines.push(line);
+    return lines.join("\n");
+  }
+
   function init(data) {
-    if (data.elements.nodes.length === 0) {
+    if (data.meta.node_count === 0) {
       document.getElementById("graph-empty").hidden = false;
       return;
+    }
+
+    // preset layout: クレームカードだけ座標を持ち、論文（親）は子から自動算出される
+    const positions = {};
+    for (const n of data.elements.nodes) {
+      if (n.data.parent !== undefined) {
+        positions[n.data.id] = { x: n.data.order * COL_W, y: n.data.seq * ROW_H };
+        n.data.label = wrapLabel(n.data.summary, 15, 3);
+      }
     }
 
     const cy = cytoscape({
       container: cyEl,
       elements: data.elements,
-      wheelSensitivity: 0.2,
+      autoungrabify: true,
       style: [
         {
-          selector: "node",
+          // クレームカード
+          selector: "node:childless",
           style: {
-            shape: (n) => KIND_SHAPES[n.data("kind")] || "ellipse",
-            "background-color": (n) => `hsl(${n.data("hue")}, 45%, 60%)`,
-            width: 26,
-            height: 26,
+            shape: "round-rectangle",
+            width: CARD_W,
+            height: CARD_H,
+            "background-color": "#2a3140",
+            "border-width": 1.2,
+            "border-color": "#46516a",
             label: "data(label)",
-            "font-size": 9,
-            color: "#e9ecf1",
-            "text-outline-color": "#191c22",
-            "text-outline-width": 2,
+            "font-family": "Hiragino Sans, Noto Sans JP, sans-serif",
+            "font-size": 11,
+            color: "#dfe4ec",
             "text-wrap": "wrap",
-            "text-max-width": 110,
-            "text-valign": "bottom",
-            "text-margin-y": 6,
+            "text-max-width": CARD_W - 22,
+            "text-valign": "center",
+            "text-halign": "center",
           },
         },
         {
-          selector: "node:selected",
-          style: { "border-width": 3, "border-color": "#ffffff" },
+          selector: "node:childless:selected",
+          style: { "border-width": 2.5, "border-color": "#ffffff", "background-color": "#333c50" },
+        },
+        {
+          // 論文カラム（compound 親）
+          selector: "node:parent",
+          style: {
+            shape: "round-rectangle",
+            "background-color": (n) => `hsl(${n.data("hue")}, 35%, 32%)`,
+            "background-opacity": 0.16,
+            "border-width": 1.2,
+            "border-color": (n) => `hsl(${n.data("hue")}, 40%, 48%)`,
+            padding: 16,
+            label: "data(label)",
+            "font-family": "Hiragino Sans, Noto Sans JP, sans-serif",
+            "font-size": 15,
+            "font-weight": 700,
+            color: (n) => `hsl(${n.data("hue")}, 55%, 78%)`,
+            "text-valign": "top",
+            "text-halign": "center",
+            "text-margin-y": -10,
+          },
+        },
+        {
+          selector: "node:parent:selected",
+          style: { "border-width": 2, "border-color": "#ffffff" },
         },
         {
           selector: "edge",
           style: {
-            width: (e) => CONF_WIDTHS[e.data("confidence")] || 2,
-            "line-color": (e) => REL_COLORS[e.data("type")] || "#8a8f98",
+            width: (e) => CONF_WIDTHS[e.data("confidence")] || 2.4,
+            "line-color": (e) => REL_COLORS[e.data("type")] || "#9aa1ab",
             "line-style": (e) => REL_STYLES[e.data("type")] || "solid",
-            "curve-style": "bezier",
+            "curve-style": "unbundled-bezier",
+            "control-point-distances": (e) => edgeArc(e),
+            "control-point-weights": 0.5,
             "target-arrow-shape": (e) => (e.data("type") === "same_as" ? "none" : "triangle"),
-            "target-arrow-color": (e) => REL_COLORS[e.data("type")] || "#8a8f98",
-            "arrow-scale": 0.9,
-            opacity: 0.9,
+            "target-arrow-color": (e) => REL_COLORS[e.data("type")] || "#9aa1ab",
+            "arrow-scale": 1.1,
+            opacity: 0.95,
           },
         },
-        { selector: "edge:selected", style: { opacity: 1, width: 4 } },
+        { selector: "edge:selected", style: { opacity: 1, width: 4.5 } },
       ],
-      layout: {
-        name: data.meta.layout,
-        animate: !reducedMotion,
-        padding: 40,
-      },
+      layout: { name: "preset", positions, fit: true, padding: 28 },
     });
 
-    cy.one("layoutstop", () => {
-      if (!focusId) return;
+    // スマホでは全体フィットだと読めないため、最初のカラム（最古の論文）が
+    // 読める倍率で左上から開始する。右へパンすると時系列に読み進められる
+    const vw = cyEl.clientWidth;
+    if (vw < 700 && !focusId) {
+      const z = Math.min(1.4, vw / (COL_W + 50));
+      cy.zoom(z);
+      cy.pan({ x: (CARD_W / 2 + 45) * z, y: 70 * z });
+    }
+
+    // 離れたカラムを結ぶエッジは途中のカラムを避けて上に弧を描く
+    function edgeArc(e) {
+      const span = Math.abs(e.source().data("order") - e.target().data("order"));
+      return span >= 2 ? -(span * 55) : -30;
+    }
+
+    if (focusId) {
       const node = cy.getElementById(focusId);
       if (node.nonempty()) {
         node.select();
-        cy.animate({ center: { eles: node }, zoom: 1.4, duration: reducedMotion ? 0 : 300 });
+        cy.center(node);
+        cy.zoom({ level: 1.1, position: node.position() });
         showClaim(focusId);
       }
-    });
+    }
 
-    cy.on("tap", "node", (e) => showClaim(e.target.id()));
+    cy.on("tap", "node:childless", (e) => showClaim(e.target.id()));
+    cy.on("tap", "node:parent", (e) => {
+      // カラム余白（見出し含む）のタップで論文詳細へ
+      location.href = "/papers/" + encodeURIComponent(e.target.id());
+    });
     cy.on("tap", "edge", (e) => showRelation(cy, e.target.data()));
     cy.on("tap", (e) => { if (e.target === cy) closeSheet(); });
 
-    document.getElementById("fab-fit").addEventListener("click", () => cy.fit(undefined, 40));
+    document.getElementById("fab-fit").addEventListener("click", () => cy.fit(undefined, 28));
   }
 
   /* ---------- シート描画 ---------- */
@@ -214,7 +290,7 @@
 
     const line = el("p", "claimline");
     line.append(
-      el("span", "badge badge--conf", boot.relationLabels[d.type] || d.type),
+      el("span", "badge badge--rel-" + d.type, boot.relationLabels[d.type] || d.type),
       el("span", "badge badge--conf", "確度 " + (boot.confidenceLabels[d.confidence] || d.confidence)),
     );
     out.push(line);

@@ -62,11 +62,17 @@ def test_claim_detail_joins_relations(client: TestClient) -> None:
 
 def test_graph_full_and_topic_filter(client: TestClient) -> None:
     body = client.get("/api/graph").json()
-    assert body["meta"]["node_count"] == 4
+    assert body["meta"]["node_count"] == 4  # クレームのみ（論文の親ノードは含まない）
     assert body["meta"]["edge_count"] == 3
-    assert body["meta"]["layout"] == "cose"
     edge_types = {e["data"]["type"] for e in body["elements"]["edges"]}
     assert edge_types == {"supports", "contradicts", "same_as"}
+    # 論文 = compound 親ノード、クレームは parent と時系列カラム位置を持つ
+    nodes = body["elements"]["nodes"]
+    parents = [n["data"] for n in nodes if "parent" not in n["data"]]
+    claims = [n["data"] for n in nodes if "parent" in n["data"]]
+    assert len(parents) == 2 and len(claims) == 4
+    assert {p["order"] for p in parents} == {0, 1}
+    assert all("seq" in c for c in claims)
 
     # self-correction トピックは論文1本のみ → 相手側クレームが範囲外の関係は落ちる
     body = client.get("/api/graph", params={"topic": "self-correction"}).json()
