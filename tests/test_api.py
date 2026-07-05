@@ -34,6 +34,7 @@ def test_paper_detail(client: TestClient) -> None:
     res = client.get("/api/papers/arxiv-2101.00001")
     assert res.status_code == 200
     assert len(res.json()["claims"]) == 2
+    assert res.json()["tags"] == ["step-by-step-prompting", "math-reasoning"]
     assert client.get("/api/papers/arxiv-9999.99999").status_code == 404
 
 

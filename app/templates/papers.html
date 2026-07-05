@@ -30,6 +30,7 @@
         <p class="card__foot">
           <span class="badge">主張 {{ p.claim_count }}</span>
           {% for t in p.topics %}<span class="tag">{{ t }}</span>{% endfor %}
+          {% for t in p.tags %}<span class="tag tag--soft">{{ t }}</span>{% endfor %}
         </p>
       </a>
     </li>

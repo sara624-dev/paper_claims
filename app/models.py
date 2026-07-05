@@ -157,6 +157,7 @@ class Paper(BaseModel):
     url: str = ""
     abstract: str = ""
     topics: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)  # 照合スコープ用の細粒度タグ（kebab-case）
     imported_at: str
     notes: str = ""
     claims: list[Claim] = Field(default_factory=list)
@@ -180,6 +181,14 @@ class Paper(BaseModel):
     def _title_not_empty(cls, v: str) -> str:
         if not v.strip():
             raise ValueError("title は必須")
+        return v
+
+    @field_validator("tags")
+    @classmethod
+    def _valid_tags(cls, v: list[str]) -> list[str]:
+        for tag in v:
+            if not TOPIC_ID_RE.match(tag):
+                raise ValueError(f"tag が kebab-case slug でない: {tag}")
         return v
 
 

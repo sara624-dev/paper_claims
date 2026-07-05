@@ -82,14 +82,30 @@ pdftotext data/pdfs/<paper_id>.pdf - | head -c 30000   # 分割して読む
 2. なければ `data/topics.json` の既存トピックから内容に合うものを選ぶ
 3. 合うものがなければ AskUserQuestion で新規トピック名を確認し、`topics.json` に追記する（id は英小文字ケバブケース）
 
+### 5.5 タグ付け（照合スコープの決定）
+
+論文に**2〜5個**の細粒度タグを付ける（英語 kebab-case。例: `self-correction`, `chain-of-thought`, `math-reasoning`）。
+トピックが「棚」ならタグは「主題の索引」で、手順7の照合はタグが重なる論文のクレームに絞られる。
+
+**表記ゆれ防止のため、付与前に必ず既存語彙を確認し再利用を優先すること**:
+
+```bash
+uv run python -c "import json,glob; print(sorted({t for f in glob.glob('data/papers/*.json') for t in json.load(open(f)).get('tags',[])}))"
+```
+
+既存タグで表せない主題があるときだけ新規タグを作る（類義の既存タグがあるなら必ずそちらを使う。
+例: `self-refinement` を作らず既存の `self-correction` を使う）。
+
 ### 6. 既存クレームとの照合と関係judgment
 
 ```bash
 uv run python scripts/build_index.py   # 照合前に必ずインデックスを最新化する（手動編集・追補後の鮮度ずれ対策）
-grep '<topic-id>' data/claims_index.jsonl
+grep '<topic-id>' data/claims_index.jsonl | grep -e '<tag1>' -e '<tag2>' -e '<tag3>'
 ```
 
-で同一トピックの既存クレーム候補を取得。
+で**同一トピック かつ タグが1つ以上重なる**既存クレーム候補を取得する（全く主題の異なる論文
+まで照合するのは無駄なため、タグでスコープを絞る）。候補が0〜数件しかない場合のみ、
+トピック全体の一行サマリを流し読みして明白な見落としがないか確認してよい。
 サマリを読んで関連しそうな候補があれば、**その候補が属する論文ファイルだけ** Read して詳細（実験条件・数値）を比較し、関係を判定する:
 
 | type | 判定基準 |

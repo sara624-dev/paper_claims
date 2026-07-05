@@ -96,6 +96,7 @@ code { font-family: var(--mono); font-size: 0.85em; background: rgba(0,0,0,0.06)
   display: inline-flex; font-size: 11px; padding: 2px 8px; border-radius: 4px;
   background: rgba(51,97,158,0.1); color: var(--ai); margin-right: 6px;
 }
+.tag--soft { background: rgba(0,0,0,0.05); color: var(--tx-2); }
 .dot {
   display: inline-block; width: 10px; height: 10px; border-radius: 50%;
   background: hsl(var(--hue) 45% 55%); margin-right: 2px;

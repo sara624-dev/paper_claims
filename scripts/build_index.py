@@ -31,6 +31,7 @@ def main() -> int:
                     {
                         "id": claim.id,
                         "topics": paper.topics,
+                        "tags": paper.tags,
                         "kind": claim.kind,
                         "summary_ja": claim.summary_ja,
                         "paper_title": paper.title,

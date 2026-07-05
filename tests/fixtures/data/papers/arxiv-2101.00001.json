@@ -3,12 +3,21 @@
   "source": "arxiv",
   "arxiv_id": "2101.00001",
   "title": "Step-by-Step Prompting Improves Reasoning in Large Models",
-  "authors": ["Alice Example", "Bob Sample"],
+  "authors": [
+    "Alice Example",
+    "Bob Sample"
+  ],
   "year": 2021,
   "venue": "TestConf 2021",
   "url": "https://arxiv.org/abs/2101.00001",
   "abstract": "We show that step-by-step prompting improves reasoning.",
-  "topics": ["cot-reasoning"],
+  "topics": [
+    "cot-reasoning"
+  ],
+  "tags": [
+    "step-by-step-prompting",
+    "math-reasoning"
+  ],
   "imported_at": "2026-07-01T09:00:00+09:00",
   "notes": "",
   "claims": [
@@ -19,8 +28,16 @@
       "kind": "experimental",
       "evidence": {
         "conditions": "TestLM 100B / few-shot 8例",
-        "datasets": ["TestMath"],
-        "metrics": [{"name": "TestMath accuracy", "value": "55%", "baseline": "20%"}],
+        "datasets": [
+          "TestMath"
+        ],
+        "metrics": [
+          {
+            "name": "TestMath accuracy",
+            "value": "55%",
+            "baseline": "20%"
+          }
+        ],
         "section": "4.1",
         "pages": "5-7"
       },
@@ -35,8 +52,16 @@
       "kind": "experimental",
       "evidence": {
         "conditions": "TestLM 100B / 自己修正2回",
-        "datasets": ["TestMath"],
-        "metrics": [{"name": "TestMath accuracy", "value": "60%", "baseline": "55%"}],
+        "datasets": [
+          "TestMath"
+        ],
+        "metrics": [
+          {
+            "name": "TestMath accuracy",
+            "value": "60%",
+            "baseline": "55%"
+          }
+        ],
         "section": "4.3",
         "pages": "8"
       },

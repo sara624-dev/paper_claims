@@ -56,9 +56,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## スケーリングの引き金（この閾値に達したら対応する）
 
+**topics と tags の役割分担**: topics = 少数・台帳管理（topics.json）・UI と問いのスコープ単位。
+tags = 多数・語彙再利用ルール付きの自由付与・**関係judgmentの照合スコープ**（同一トピック内でタグが重なる論文に絞る）。
+
 | 兆候 | 対応 |
 |------|------|
-| 1トピックの照合候補が **200クレーム超**（取り込み報告の候補数で監視） | 候補絞り込みの段階化（キーワードタグ or 埋め込み検索）を導入 |
+| **タグ絞り込み後でも**照合候補が 200 クレーム超 | 埋め込み検索による候補絞り込みを導入 |
+| タグ語彙が増えすぎて再利用されなくなる（目安 50 語超） | 語彙の統合・リネーム（papers 一括置換 + build_index） |
 | トピックが広くなりすぎて照合が雑になる | **トピック分割手順**: (1) topics.json に新トピック追加 → (2) 対象論文の `topics` を付け替え → (3) 問いの `topics` も更新 → (4) validate + build_index。クレームは動かさない（論文単位で付け替える） |
 | `relations.json` が **200KB 超** | JSONL（1行1関係・追記only）へ移行（storage.py のローダ変更 + 変換スクリプト。ID・スキーマは不変） |
 | 低confidenceの関係・リンクが溜まる | gardener 型の定期再検証スキルを導入（created_at + confidence で古い低確信判定を対象化） |
@@ -76,6 +80,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `arxiv_id` | str \| null | arXiv ID（非arXivは null） |
 | `title` / `authors` / `year` / `venue` / `url` / `abstract` | — | 論文メタデータ（venue 不明なら `""`） |
 | `topics` | list[str] | topic id の配列。**topics.json に定義済みであること** |
+| `tags` | list[str] | 照合スコープ用の細粒度タグ（英語 kebab-case・2〜5個）。**既存語彙を再利用**（表記ゆれ厳禁）。関係judgmentは同一トピック内でタグが重なる論文に絞られる |
 | `imported_at` | str | ISO 時刻（JST、秒精度） |
 | `notes` | str | 自由メモ |
 | `claims` | list | 下記 Claim の配列 |

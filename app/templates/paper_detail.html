@@ -17,6 +17,7 @@
     <p class="paperhead__links">
       {% if paper.url %}<a href="{{ paper.url }}" rel="noopener">原文を開く ↗</a>{% endif %}
       {% for t in paper.topics %}<a class="tag" href="/?topic={{ t }}">{{ t }}</a>{% endfor %}
+      {% for t in paper.tags %}<span class="tag tag--soft">{{ t }}</span>{% endfor %}
     </p>
     {% if paper.abstract %}
     <details class="abstract">

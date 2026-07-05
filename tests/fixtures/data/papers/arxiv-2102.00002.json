@@ -3,12 +3,22 @@
   "source": "arxiv",
   "arxiv_id": "2102.00002",
   "title": "Self-Correction Does Not Help Reasoning Yet",
-  "authors": ["Carol Test"],
+  "authors": [
+    "Carol Test"
+  ],
   "year": 2021,
   "venue": "",
   "url": "https://arxiv.org/abs/2102.00002",
   "abstract": "We find that intrinsic self-correction degrades reasoning.",
-  "topics": ["cot-reasoning", "self-correction"],
+  "topics": [
+    "cot-reasoning",
+    "self-correction"
+  ],
+  "tags": [
+    "step-by-step-prompting",
+    "self-correction",
+    "math-reasoning"
+  ],
   "imported_at": "2026-07-02T09:00:00+09:00",
   "notes": "",
   "claims": [
@@ -19,8 +29,16 @@
       "kind": "experimental",
       "evidence": {
         "conditions": "TestLM 100B / few-shot 8例（追試）",
-        "datasets": ["TestMath"],
-        "metrics": [{"name": "TestMath accuracy", "value": "54%", "baseline": "21%"}],
+        "datasets": [
+          "TestMath"
+        ],
+        "metrics": [
+          {
+            "name": "TestMath accuracy",
+            "value": "54%",
+            "baseline": "21%"
+          }
+        ],
         "section": "3.1",
         "pages": "4"
       },
@@ -35,8 +53,17 @@
       "kind": "experimental",
       "evidence": {
         "conditions": "TestLM 100B / 自己修正2回 / 外部フィードバックなし",
-        "datasets": ["TestMath", "TestLogic"],
-        "metrics": [{"name": "TestMath accuracy", "value": "48%", "baseline": "54%"}],
+        "datasets": [
+          "TestMath",
+          "TestLogic"
+        ],
+        "metrics": [
+          {
+            "name": "TestMath accuracy",
+            "value": "48%",
+            "baseline": "54%"
+          }
+        ],
         "section": "4.2",
         "pages": "6-8"
       },
