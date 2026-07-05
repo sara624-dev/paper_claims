@@ -50,6 +50,10 @@ sudo systemctl enable --now paper-claims.service
 
 LAN 内から `http://<PiのIP>:8124/` で開ける。
 
+> **注意**: 論文データの追加・編集は再起動なしで反映される（mtimeキャッシュ）が、
+> **コード（`app/` 配下）を変更した場合は `sudo systemctl restart paper-claims` が必要**。
+> 反映漏れがあると「新しいJS × 古いAPI」の食い違いで表示が壊れることがある。
+
 ## データ運用
 
 - `data/` は git 管理（`data/pdfs/` のみ除外）。論文の取り込み単位でコミットされる
