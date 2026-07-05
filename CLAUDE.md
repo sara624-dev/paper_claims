@@ -80,7 +80,7 @@ tags = 多数・語彙再利用ルール付きの自由付与・**関係judgment
 | `arxiv_id` | str \| null | arXiv ID（非arXivは null） |
 | `title` / `authors` / `year` / `venue` / `url` / `abstract` | — | 論文メタデータ（venue 不明なら `""`） |
 | `topics` | list[str] | topic id の配列。**topics.json に定義済みであること** |
-| `tags` | list[str] | 照合スコープ用の細粒度タグ（英語 kebab-case・2〜5個）。**既存語彙を再利用**（表記ゆれ厳禁）。関係judgmentは同一トピック内でタグが重なる論文に絞られる |
+| `tags` | list[str] | 照合スコープ用の細粒度タグ（英語 kebab-case・2〜5個）。**ユーザーが付与する**（取り込み時にスキルが既存語彙から候補を提案し、ユーザーが選択・追加）。既存語彙の再利用優先・表記ゆれ厳禁。関係judgmentは同一トピック内でタグが重なる論文に絞られる |
 | `imported_at` | str | ISO 時刻（JST、秒精度） |
 | `notes` | str | 自由メモ |
 | `claims` | list | 下記 Claim の配列 |

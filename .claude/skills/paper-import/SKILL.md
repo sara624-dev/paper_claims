@@ -6,7 +6,7 @@ description: >
   data/ に保存する。「この論文を取り込んで」「論文を登録して」「arXivのURLを読み込んで」
   「PDFからクレームを抽出して」など、論脈（paper_claims）への論文追加の依頼で必ず使う。
   arXiv URL が会話に出てきて取り込み文脈であれば明示依頼がなくても検討すること。
-argument-hint: "<arXiv URL | arXiv ID | PDFパス> [topic-id]"
+argument-hint: "<arXiv URL | arXiv ID | PDFパス> [topic-id] [タグ カンマ区切り（任意・省略時は対話で決定）]"
 allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion, Bash(curl *), Bash(ls *), Bash(uv run *), Bash(git *), Bash(date *), Bash(pdftotext *), WebFetch
 ---
 
@@ -82,19 +82,24 @@ pdftotext data/pdfs/<paper_id>.pdf - | head -c 30000   # 分割して読む
 2. なければ `data/topics.json` の既存トピックから内容に合うものを選ぶ
 3. 合うものがなければ AskUserQuestion で新規トピック名を確認し、`topics.json` に追記する（id は英小文字ケバブケース）
 
-### 5.5 タグ付け（照合スコープの決定）
+### 5.5 タグ付け（照合スコープの決定 — **タグはユーザーが決める**）
 
-論文に**2〜5個**の細粒度タグを付ける（英語 kebab-case。例: `self-correction`, `chain-of-thought`, `math-reasoning`）。
-トピックが「棚」ならタグは「主題の索引」で、手順7の照合はタグが重なる論文のクレームに絞られる。
+論文の**2〜5個**の細粒度タグ（英語 kebab-case。例: `self-correction`, `chain-of-thought`, `math-reasoning`）は
+**ユーザー自身が付与する**。タグは照合スコープを決めるレバーであり、ユーザーの分類眼を反映させる（設計上の決定）。
+スキルが勝手に確定してはならない。
 
-**表記ゆれ防止のため、付与前に必ず既存語彙を確認し再利用を優先すること**:
+1. 引数・会話でタグが指定されていればそれを使う（確認不要）
+2. 指定がなければ、既存語彙を取得した上で:
 
-```bash
-uv run python -c "import json,glob; print(sorted({t for f in glob.glob('data/papers/*.json') for t in json.load(open(f)).get('tags',[])}))"
-```
+   ```bash
+   uv run python -c "import json,glob; print(sorted({t for f in glob.glob('data/papers/*.json') for t in json.load(open(f)).get('tags',[])}))"
+   ```
 
-既存タグで表せない主題があるときだけ新規タグを作る（類義の既存タグがあるなら必ずそちらを使う。
-例: `self-refinement` を作らず既存の `self-correction` を使う）。
+   論文内容に合う候補（**既存語彙からの再利用を優先**し、必要な場合のみ新規案を1〜2個混ぜる）を
+   AskUserQuestion（multiSelect）で提示し、ユーザーに選択・追加してもらう
+3. 表記ゆれ厳禁: 類義の既存タグがあるのに新規案を出さない（例: `self-refinement` を提案せず既存の `self-correction` を出す）
+
+トピックが「棚」ならタグは「主題の索引」で、手順6の照合はタグが重なる論文のクレームに絞られる。
 
 ### 6. 既存クレームとの照合と関係judgment
 
