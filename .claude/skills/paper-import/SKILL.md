@@ -24,6 +24,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion, Bash(curl *), Bas
   - ローカル PDF パス → タイトルから英小文字ケバブケースの slug を作り `paper_id = pdf-<slug>` とする
 - `data/papers/<paper_id>.json` が既に存在する場合は**中断してユーザーに報告**する（更新は明示指示があった場合のみ）。
 
+**追補モード**: 「〜の観点でクレームを追補して」のように取り込み済み論文への追加を明示指示された場合は、
+PDF を指定観点で再読し、既存クレームと重複しない新規クレームを続き連番（`c<次番>`）で追加する
+（quote / section 必須）。追補後は手順6〜9（照合・問い判定・検証）を新規クレームに対して実施し、
+`uv run python scripts/verify_quotes.py <paper_id>` も実行する。
+初回取り込みの3〜10件はダイジェストであり、取りこぼしはこの追補と /paper-question の
+問い駆動再読（手順2.5）で回復する二段構えの設計。
+
 ### 2. メタデータ取得（arXiv の場合）
 
 ```bash
