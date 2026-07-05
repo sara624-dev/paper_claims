@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ claim.summary_ja }} — 論脈 RONMYAKU{% endblock %}
+
+{% block content %}
+<main class="container">
+
+  <nav class="crumb"><a href="/papers/{{ paper.id }}">← {{ paper.title }}</a></nav>
+
+  <article class="card card--claim card--full">
+    <p class="claimline">
+      <span class="badge badge--{{ claim.kind }}">{{ KIND_LABELS[claim.kind] }}</span>
+      <span class="badge badge--conf">確度 {{ CONFIDENCE_LABELS[claim.confidence] }}</span>
+      <code class="claimid">{{ claim.id }}</code>
+    </p>
+    <h1 class="card__title">{{ claim.summary_ja }}</h1>
+    <blockquote class="quote">{{ claim.quote }} <cite>§{{ claim.evidence.section }}{% if claim.evidence.pages %} · p.{{ claim.evidence.pages }}{% endif %}</cite></blockquote>
+    {% if claim.confidence_note %}<p class="confnote">確度の根拠: {{ claim.confidence_note }}</p>{% endif %}
+
+    <h2 class="sectionhead">根拠</h2>
+    <dl class="evidence">
+      {% if claim.evidence.conditions %}<dt>実験条件</dt><dd>{{ claim.evidence.conditions }}</dd>{% endif %}
+      {% if claim.evidence.datasets %}<dt>データセット</dt><dd>{% for d in claim.evidence.datasets %}<span class="tag">{{ d }}</span>{% endfor %}</dd>{% endif %}
+    </dl>
+    {% if claim.evidence.metrics %}
+    <table class="metrics">
+      <thead><tr><th>指標</th><th>結果</th><th>ベースライン</th></tr></thead>
+      <tbody>
+        {% for m in claim.evidence.metrics %}
+        <tr><td>{{ m.name }}</td><td class="num">{{ m.value }}</td><td class="num">{{ m.baseline or "—" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <h2 class="sectionhead">関係 <span class="sectionhead__count">{{ relations|length }}</span></h2>
+    {% if relations %}
+    <ul class="rels rels--detail">
+      {% for r in relations %}
+      <li class="rel rel--{{ r.type }}">
+        <p class="rel__head">
+          <span class="rel__type">{{ RELATION_LABELS[r.type] }}{{ "する" if r.direction == "out" else "される" }}</span>
+          <span class="badge badge--conf">確度 {{ CONFIDENCE_LABELS[r.confidence] }}</span>
+        </p>
+        <a class="rel__target" href="/claims/{{ r.other.claim_id }}">{{ r.other.summary_ja }}</a>
+        <p class="rel__paper">{{ r.other.paper_title }}</p>
+        <p class="rel__rationale">{{ r.rationale_ja }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty__title">この主張はまだ他の論文と接続していません。</p>
+    {% endif %}
+
+    <p class="actions">
+      {% if paper.topics %}
+      <a class="btn" href="/?topic={{ paper.topics[0] }}&focus={{ claim.id }}">脈図で見る</a>
+      {% else %}
+      <a class="btn" href="/?focus={{ claim.id }}">脈図で見る</a>
+      {% endif %}
+    </p>
+  </article>
+
+</main>
+{% endblock %}

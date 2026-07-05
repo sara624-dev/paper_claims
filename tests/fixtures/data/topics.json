@@ -1,0 +1,16 @@
+{
+  "topics": [
+    {
+      "id": "cot-reasoning",
+      "name_ja": "CoT推論",
+      "description": "段階的プロンプティングの有効性と限界",
+      "created_at": "2026-07-01T09:00:00+09:00"
+    },
+    {
+      "id": "self-correction",
+      "name_ja": "自己修正",
+      "description": "LLM の自己修正が推論に効くか",
+      "created_at": "2026-07-02T09:00:00+09:00"
+    }
+  ]
+}

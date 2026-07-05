@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>{% block title %}論脈 RONMYAKU{% endblock %}</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+
+<header class="masthead">
+  <div class="masthead__bar">
+    <a class="brand" href="/">
+      <span class="brand__mark">論脈</span>
+      <span class="brand__latin">RONMYAKU</span>
+    </a>
+    <nav class="masthead__nav">
+      <a href="/" class="navlink {% if nav == 'graph' %}is-current{% endif %}">脈図</a>
+      <a href="/papers" class="navlink {% if nav == 'papers' %}is-current{% endif %}">論文</a>
+    </nav>
+  </div>
+</header>
+
+{% block content %}{% endblock %}
+
+{% block body_scripts %}{% endblock %}
+</body>
+</html>

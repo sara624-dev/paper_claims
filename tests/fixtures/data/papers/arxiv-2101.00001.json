@@ -1,0 +1,48 @@
+{
+  "id": "arxiv-2101.00001",
+  "source": "arxiv",
+  "arxiv_id": "2101.00001",
+  "title": "Step-by-Step Prompting Improves Reasoning in Large Models",
+  "authors": ["Alice Example", "Bob Sample"],
+  "year": 2021,
+  "venue": "TestConf 2021",
+  "url": "https://arxiv.org/abs/2101.00001",
+  "abstract": "We show that step-by-step prompting improves reasoning.",
+  "topics": ["cot-reasoning"],
+  "imported_at": "2026-07-01T09:00:00+09:00",
+  "notes": "",
+  "claims": [
+    {
+      "id": "arxiv-2101.00001-c01",
+      "summary_ja": "段階的プロンプトは大規模モデルの算術推論を大幅に改善する",
+      "quote": "step-by-step prompting substantially improves arithmetic reasoning",
+      "kind": "experimental",
+      "evidence": {
+        "conditions": "TestLM 100B / few-shot 8例",
+        "datasets": ["TestMath"],
+        "metrics": [{"name": "TestMath accuracy", "value": "55%", "baseline": "20%"}],
+        "section": "4.1",
+        "pages": "5-7"
+      },
+      "confidence": "high",
+      "confidence_note": "複数データセットで一貫",
+      "created_at": "2026-07-01T09:00:00+09:00"
+    },
+    {
+      "id": "arxiv-2101.00001-c02",
+      "summary_ja": "モデルの自己修正は推論精度をさらに向上させる",
+      "quote": "self-correction further improves accuracy",
+      "kind": "experimental",
+      "evidence": {
+        "conditions": "TestLM 100B / 自己修正2回",
+        "datasets": ["TestMath"],
+        "metrics": [{"name": "TestMath accuracy", "value": "60%", "baseline": "55%"}],
+        "section": "4.3",
+        "pages": "8"
+      },
+      "confidence": "medium",
+      "confidence_note": "単一データセットのみ",
+      "created_at": "2026-07-01T09:00:00+09:00"
+    }
+  ]
+}

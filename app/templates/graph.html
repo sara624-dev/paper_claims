@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}脈図 — 論脈 RONMYAKU{% endblock %}
+{% block bodyclass %}is-graph{% endblock %}
+
+{% block content %}
+<div class="graphwrap">
+
+  {% if data_errors %}
+  <div class="databanner" role="alert">
+    読み飛ばしたデータが {{ data_errors|length }} 件あります。<code>uv run python scripts/validate.py</code> で確認してください。
+  </div>
+  {% endif %}
+
+  <div class="chiprow" role="tablist" aria-label="トピック">
+    <a class="chip {% if not initial_topic %}is-active{% endif %}" href="/">全体</a>
+    {% for t in topics %}
+    <a class="chip {% if initial_topic == t.id %}is-active{% endif %}" href="/?topic={{ t.id }}">{{ t.name_ja }}</a>
+    {% endfor %}
+  </div>
+
+  <div id="cy" aria-label="クレームグラフ"></div>
+
+  <div class="graph-empty" id="graph-empty" hidden>
+    <p class="graph-empty__title">まだ脈がありません</p>
+    <p>Claude Code で <code>/paper-import &lt;arXiv URL&gt;</code> を実行して論文を取り込むと、ここに主張のつながりが描かれます。</p>
+  </div>
+
+  <div class="legend" aria-hidden="true">
+    <span class="legend__item"><i class="lg lg--supports"></i>支持</span>
+    <span class="legend__item"><i class="lg lg--contradicts"></i>反証</span>
+    <span class="legend__item"><i class="lg lg--same"></i>同一</span>
+    <span class="legend__item"><i class="lg lg--extends"></i>拡張</span>
+  </div>
+
+  <div class="fabs">
+    <button class="fab" id="fab-fit" type="button" aria-label="全体を表示" title="全体を表示">⛶</button>
+  </div>
+
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+  <aside class="sheet" id="sheet" aria-live="polite" hidden>
+    <div class="sheet__grip" aria-hidden="true"></div>
+    <button class="sheet__close" id="sheet-close" type="button" aria-label="閉じる">×</button>
+    <div class="sheet__body" id="sheet-body"></div>
+  </aside>
+
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script id="bootstrap" type="application/json">{{ bootstrap_json|safe }}</script>
+<script src="/static/vendor/cytoscape.min.js"></script>
+<script src="/static/app.js"></script>
+{% endblock %}

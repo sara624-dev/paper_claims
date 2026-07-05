@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}論文 — 論脈 RONMYAKU{% endblock %}
+
+{% block content %}
+<main class="container">
+
+  <div class="chiprow chiprow--light">
+    <a class="chip {% if not current_topic %}is-active{% endif %}" href="/papers">全体</a>
+    {% for t in topics %}
+    <a class="chip {% if current_topic == t.id %}is-active{% endif %}" href="/papers?topic={{ t.id }}">{{ t.name_ja }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="searchbar">
+    <input type="search" id="paper-filter" placeholder="タイトル・著者で絞り込み" aria-label="論文を絞り込み">
+  </div>
+
+  {% if papers %}
+  <ul class="cards" id="paper-cards">
+    {% for p in papers %}
+    <li class="card" data-haystack="{{ (p.title ~ ' ' ~ p.authors|join(' '))|lower }}">
+      <a class="card__link" href="/papers/{{ p.id }}">
+        <span class="dot" style="--hue: {{ paper_hue(p.id) }}"></span>
+        <h2 class="card__title">{{ p.title }}</h2>
+        <p class="card__meta">
+          {{ p.authors[:3]|join(", ") }}{% if p.authors|length > 3 %} 他{% endif %}
+          {% if p.year %} · {{ p.year }}{% endif %}
+          {% if p.venue %} · {{ p.venue }}{% endif %}
+        </p>
+        <p class="card__foot">
+          <span class="badge">主張 {{ p.claim_count }}</span>
+          {% for t in p.topics %}<span class="tag">{{ t }}</span>{% endfor %}
+        </p>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    <p class="empty__title">まだ論文がありません</p>
+    <p>Claude Code で <code>/paper-import &lt;arXiv URL&gt;</code> を実行して取り込んでください。</p>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}
+
+{% block body_scripts %}
+<script src="/static/app.js"></script>
+{% endblock %}

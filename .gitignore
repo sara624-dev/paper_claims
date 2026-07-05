@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# ダウンロードした論文PDF（サイズが大きいためgit管理しない）
+data/pdfs/*
+!data/pdfs/.gitkeep

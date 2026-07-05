@@ -1,0 +1,48 @@
+{
+  "id": "arxiv-2102.00002",
+  "source": "arxiv",
+  "arxiv_id": "2102.00002",
+  "title": "Self-Correction Does Not Help Reasoning Yet",
+  "authors": ["Carol Test"],
+  "year": 2021,
+  "venue": "",
+  "url": "https://arxiv.org/abs/2102.00002",
+  "abstract": "We find that intrinsic self-correction degrades reasoning.",
+  "topics": ["cot-reasoning", "self-correction"],
+  "imported_at": "2026-07-02T09:00:00+09:00",
+  "notes": "",
+  "claims": [
+    {
+      "id": "arxiv-2102.00002-c01",
+      "summary_ja": "段階的プロンプトは大規模モデルの推論を改善する（追試で確認）",
+      "quote": "we replicate that step-by-step prompting improves reasoning",
+      "kind": "experimental",
+      "evidence": {
+        "conditions": "TestLM 100B / few-shot 8例（追試）",
+        "datasets": ["TestMath"],
+        "metrics": [{"name": "TestMath accuracy", "value": "54%", "baseline": "21%"}],
+        "section": "3.1",
+        "pages": "4"
+      },
+      "confidence": "high",
+      "confidence_note": "先行研究の追試に成功",
+      "created_at": "2026-07-02T09:00:00+09:00"
+    },
+    {
+      "id": "arxiv-2102.00002-c02",
+      "summary_ja": "外部フィードバックなしの自己修正はむしろ推論精度を悪化させる",
+      "quote": "intrinsic self-correction degrades reasoning performance",
+      "kind": "experimental",
+      "evidence": {
+        "conditions": "TestLM 100B / 自己修正2回 / 外部フィードバックなし",
+        "datasets": ["TestMath", "TestLogic"],
+        "metrics": [{"name": "TestMath accuracy", "value": "48%", "baseline": "54%"}],
+        "section": "4.2",
+        "pages": "6-8"
+      },
+      "confidence": "high",
+      "confidence_note": "2データセットで一貫して悪化",
+      "created_at": "2026-07-02T09:00:00+09:00"
+    }
+  ]
+}

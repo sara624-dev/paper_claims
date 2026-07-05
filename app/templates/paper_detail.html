@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ paper.title }} — 論脈 RONMYAKU{% endblock %}
+
+{% block content %}
+<main class="container">
+
+  <nav class="crumb"><a href="/papers">← 論文一覧</a></nav>
+
+  <article class="paperhead">
+    <span class="dot dot--lg" style="--hue: {{ paper_hue(paper.id) }}"></span>
+    <h1 class="paperhead__title">{{ paper.title }}</h1>
+    <p class="paperhead__meta">
+      {{ paper.authors|join(", ") }}
+      {% if paper.year %} · {{ paper.year }}{% endif %}
+      {% if paper.venue %} · {{ paper.venue }}{% endif %}
+    </p>
+    <p class="paperhead__links">
+      {% if paper.url %}<a href="{{ paper.url }}" rel="noopener">原文を開く ↗</a>{% endif %}
+      {% for t in paper.topics %}<a class="tag" href="/?topic={{ t }}">{{ t }}</a>{% endfor %}
+    </p>
+    {% if paper.abstract %}
+    <details class="abstract">
+      <summary>Abstract</summary>
+      <p>{{ paper.abstract }}</p>
+    </details>
+    {% endif %}
+    {% if paper.notes %}<p class="notes">{{ paper.notes }}</p>{% endif %}
+  </article>
+
+  <h2 class="sectionhead">主張 <span class="sectionhead__count">{{ paper.claims|length }}</span></h2>
+
+  <ul class="cards">
+    {% for c in paper.claims %}
+    <li class="card card--claim">
+      <p class="claimline">
+        <span class="badge badge--{{ c.kind }}">{{ KIND_LABELS[c.kind] }}</span>
+        <span class="badge badge--conf">確度 {{ CONFIDENCE_LABELS[c.confidence] }}</span>
+        <code class="claimid">{{ c.id[-3:] }}</code>
+      </p>
+      <h3 class="card__title"><a href="/claims/{{ c.id }}">{{ c.summary_ja }}</a></h3>
+      <blockquote class="quote">{{ c.quote }} <cite>§{{ c.evidence.section }}</cite></blockquote>
+      {% set rels = claim_relations[c.id] %}
+      {% if rels %}
+      <ul class="rels">
+        {% for r in rels %}
+        <li class="rel rel--{{ r.type }}">
+          <span class="rel__type">{{ RELATION_LABELS[r.type] }}{{ "する" if r.direction == "out" else "される" }}</span>
+          <a href="/claims/{{ r.other.claim_id }}">{{ r.other.summary_ja }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+</main>
+{% endblock %}
