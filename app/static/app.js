@@ -190,7 +190,7 @@
     if (vw < 700 && !focusId) {
       const z = Math.min(1.4, vw / (COL_W + 50));
       cy.zoom(z);
-      cy.pan({ x: (CARD_W / 2 + 45) * z, y: 70 * z });
+      cy.pan({ x: (CARD_W / 2 + 45) * z, y: 95 * z });
     }
 
     // 離れたカラムを結ぶエッジは途中のカラムを避けて上に弧を描く
