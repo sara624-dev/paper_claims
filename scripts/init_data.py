@@ -37,7 +37,9 @@ def main() -> int:
             print(f"exists:  {path}（変更なし）")
     (config.DATA_DIR / "claims_index.jsonl").touch()
     (config.DATA_DIR / "challenges_index.jsonl").touch()
-    print("OK: data/ を初期化した。バックアップしたい場合は data/ を私有 git リポジトリ化することを推奨")
+    print(
+        "OK: data/ を初期化した。バックアップしたい場合は data/ を私有 git リポジトリ化することを推奨"
+    )
     return 0
 
 
