@@ -190,7 +190,11 @@ verify_quotes が NG のクレームは**捏造引用の疑い**なので、PDF 
 ### 9. コミット
 
 ```bash
-git add data/ && git commit -m "import: <paper_id> <短いタイトル>（クレームN件・関係M件）"
+# data/ はツールリポジトリの git 管理外（個人データ）。data/ 自体が私有 git リポジトリなら
+# 取り込み単位でコミットする（巻き戻し可能性の維持）。リポジトリでなければスキップ
+if [ -d data/.git ]; then
+  git -C data add -A && git -C data commit -m "import: <paper_id> <短いタイトル>（クレームN件・関係M件）"
+fi
 ```
 
 ### 10. 報告

@@ -74,7 +74,10 @@ uv run python scripts/validate.py
 ### 4. コミットと報告
 
 ```bash
-git add data/ && git commit -m "question: <q-NN> <問いの短縮形>（リンクN件）" && git push origin main
+# data/ はツールリポジトリの git 管理外。私有リポジトリなら取り込み単位でコミット
+if [ -d data/.git ]; then
+  git -C data add -A && git -C data commit -m "question: <q-NN> <問いの短縮形>（リンクN件）"
+fi
 ```
 
 報告内容:

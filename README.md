@@ -19,7 +19,7 @@
 ## コンセプト
 
 - **抽出・照合・紐付けは Claude Code が行う**（`.claude/skills/` のプロジェクトスキル）。Web UI は閲覧・可視化専用
-- **ストレージは JSON ファイル + git**。DB なし。Claude Code が直接読み書きでき、diff で履歴が追え、壊れたら戻せる
+- **ストレージは JSON ファイル**。DB なし。Claude Code が直接読み書きできる。**研究データ（`data/`）はこのリポジトリでは管理しない**（個人データのため git 管理外。任意で `data/` を私有リポジトリ化すれば履歴・巻き戻しも持てる）
 - **プロベナンス原則**: すべての主張・課題は原文引用（quote）・出典セクション・周辺文脈（context_ja）を必須で持ち、引用は PDF 本文との機械照合（`scripts/verify_quotes.py`）で捏造を検出する
 - **4つの分類軸**: topic（分野の棚）/ tag（照合スコープ・ユーザー付与）/ 問い（ユーザーの探究。主張が答えとして自動蓄積）/ 課題（論文が向き合う研究課題。共有課題で論文同士が繋がる）
 
@@ -35,9 +35,19 @@
 git clone https://github.com/sara624-dev/paper_claims.git
 cd paper_claims
 uv sync
+uv run python scripts/init_data.py     # data/ の骨組み（空の台帳）を作成
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8124
 # → http://localhost:8124/ を開く
 ```
+
+`data/` は git 管理外の個人データ。バックアップと巻き戻しが欲しい場合は私有リポジトリ化を推奨:
+
+```bash
+git -C data init && git -C data add -A && git -C data commit -m "init"
+# （任意）私有リモートを追加して push
+```
+
+私有リポジトリ化しておくと、取り込みスキルが変更単位で自動コミットする。
 
 ## 使い方
 
@@ -120,7 +130,7 @@ LAN 内サーバ（Raspberry Pi 等）で常時稼働させる場合は `paper-c
 
 ## 設計原則
 
-- 「壊れない」ではなく「**壊れても静かに腐らない**」: スキーマ検証 → 参照整合性（validate）→ 引用実在（verify_quotes）→ git 巻き戻し、の多層防御
+- 「壊れない」ではなく「**壊れても静かに腐らない**」: スキーマ検証 → 参照整合性（validate）→ 引用実在（verify_quotes）→ 巻き戻し（data/ を私有リポジトリ化した場合）、の多層防御
 - 確信の持てない関係・リンクは作らない（偽リンクより欠落を許容）
 - 判定・提示は常に文脈込みで行う（quote 断片だけの比較はミスリードを生む）
 

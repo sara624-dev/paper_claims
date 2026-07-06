@@ -51,7 +51,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - クレーム・論文を削除すると relations / question_links がダングリングする。**削除 → `validate.py` 実行 → 列挙されたダングリング関係・リンクを削除 → `build_index.py`** の順で掃除する
 - ID の**欠番は再利用しない**（rel / ql / claim いずれも。過去の参照履歴と混線するため）
-- データは取り込み単位で git コミットされているので、壊れたら `git log data/` から巻き戻せる
+- **data/ はツールリポジトリの git 管理外**（個人の研究データ。.gitignore 済み・公開リポに含めない）。`data/` 自体を私有 git リポジトリにしている場合、スキルが取り込み単位で `git -C data commit` するので壊れたら巻き戻せる
 - ID 空間の上限: claim = c99/論文、question = q-99、relation/link = 9999。個人利用では当面問題ないが、超える場合は `app/models.py` の正規表現と既存データの一括変換が必要
 
 ## スケーリングの引き金（この閾値に達したら対応する）
