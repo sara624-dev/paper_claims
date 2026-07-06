@@ -66,9 +66,30 @@ def _paper_summary(paper: Paper) -> dict[str, Any]:
         "venue": paper.venue,
         "url": paper.url,
         "topics": paper.topics,
+        "tags": paper.tags,
         "claim_count": len(paper.claims),
+        "challenge_head": paper.challenges[0].summary_ja if paper.challenges else "",
         "imported_at": paper.imported_at,
     }
+
+
+def _problem_summary(vault: storage.Vault, problem_id: str) -> dict[str, Any] | None:
+    """共有課題のサマリ（向き合う論文一覧つき）を返す。"""
+    problem = vault.problem_by_id(problem_id)
+    if problem is None:
+        return None
+    entries = [
+        {
+            "paper_id": paper.id,
+            "paper_title": paper.title,
+            "year": paper.year,
+            "challenge_id": ch.id,
+            "summary_ja": ch.summary_ja,
+        }
+        for paper, ch in vault.challenges_for_problem(problem_id)
+    ]
+    entries.sort(key=lambda x: (x["year"] or 9999, x["paper_id"]))
+    return {**problem.model_dump(), "entries": entries}
 
 
 def _claim_relations(vault: storage.Vault, claim_id: str) -> list[dict[str, Any]]:
@@ -249,6 +270,14 @@ def api_graph(topic: str | None = None, question: str | None = None) -> dict[str
     return graph.build_elements(vault, topic, question)
 
 
+@app.get("/api/problems")
+def api_problems() -> dict[str, Any]:
+    """共有課題一覧（向き合う論文つき）。"""
+    vault = storage.load_vault()
+    problems = [_problem_summary(vault, p.id) for p in vault.problems]
+    return {"problems": [p for p in problems if p is not None]}
+
+
 @app.get("/api/questions")
 def api_questions() -> dict[str, Any]:
     """問い一覧（stance 集計つき）。"""
@@ -337,16 +366,43 @@ def page_papers(request: Request, topic: str | None = None) -> HTMLResponse:
 
 @app.get("/papers/{paper_id}", response_class=HTMLResponse)
 def page_paper_detail(request: Request, paper_id: str) -> HTMLResponse:
-    """論文詳細（クレーム一覧つき）。"""
+    """論文詳細（課題・クレーム一覧つき）。"""
     vault = storage.load_vault()
     paper = vault.paper_by_id(paper_id)
     if paper is None:
         raise HTTPException(status_code=404, detail=f"paper not found: {paper_id}")
     claim_relations = {c.id: _claim_relations(vault, c.id) for c in paper.claims}
+    # 各課題の「同じ課題に向き合う他の論文」
+    challenge_mates: dict[str, dict[str, Any]] = {}
+    for ch in paper.challenges:
+        if ch.problem_id is None:
+            continue
+        summary = _problem_summary(vault, ch.problem_id)
+        if summary is None:
+            continue
+        summary["entries"] = [e for e in summary["entries"] if e["paper_id"] != paper.id]
+        challenge_mates[ch.id] = summary
     return templates.TemplateResponse(
         request,
         "paper_detail.html",
-        {"nav": "papers", "paper": paper, "claim_relations": claim_relations},
+        {
+            "nav": "papers",
+            "paper": paper,
+            "claim_relations": claim_relations,
+            "challenge_mates": challenge_mates,
+        },
+    )
+
+
+@app.get("/problems", response_class=HTMLResponse)
+def page_problems(request: Request) -> HTMLResponse:
+    """共有課題の一覧（どの課題に誰が挑んでいるか）。"""
+    vault = storage.load_vault()
+    problems = [_problem_summary(vault, p.id) for p in vault.problems]
+    return templates.TemplateResponse(
+        request,
+        "problems.html",
+        {"nav": "problems", "problems": [p for p in problems if p is not None]},
     )
 
 

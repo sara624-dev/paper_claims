@@ -27,6 +27,7 @@
           {% if p.year %} · {{ p.year }}{% endif %}
           {% if p.venue %} · {{ p.venue }}{% endif %}
         </p>
+        {% if p.challenge_head %}<p class="card__challenge">課題: {{ p.challenge_head }}</p>{% endif %}
         <p class="card__foot">
           <span class="badge">主張 {{ p.claim_count }}</span>
           {% for t in p.topics %}<span class="tag">{{ t }}</span>{% endfor %}

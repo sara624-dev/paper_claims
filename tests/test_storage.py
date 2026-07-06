@@ -17,6 +17,8 @@ def test_load_vault(data_dir: Path) -> None:
     assert len(vault.topics) == 2
     assert len(vault.questions) == 2
     assert len(vault.question_links) == 3
+    assert len(vault.problems) == 1
+    assert sum(len(p.challenges) for p in vault.papers) == 2
     assert vault.errors == []
     # 取り込み日降順
     assert vault.papers[0].id == "arxiv-2102.00002"
@@ -31,6 +33,14 @@ def test_question_lookups(data_dir: Path) -> None:
         "arxiv-2102.00002-c01",
     }
     assert [x.question_id for x in vault.links_for_claim("arxiv-2102.00002-c02")] == ["q-02"]
+
+
+def test_problem_lookups(data_dir: Path) -> None:
+    vault = storage.load_vault()
+    assert vault.problem_by_id("prob-01") is not None
+    assert vault.problem_by_id("prob-99") is None
+    mates = vault.challenges_for_problem("prob-01")
+    assert {paper.id for paper, _ in mates} == {"arxiv-2101.00001", "arxiv-2102.00002"}
 
 
 def test_paper_and_claim_lookup(data_dir: Path) -> None:

@@ -131,3 +131,21 @@ def test_detects_duplicate_question_link(data_dir: Path) -> None:
     _write_question_links(data_dir, raw)
     errors = validate_mod.validate()
     assert any("(question, claim) のリンクが重複" in e for e in errors)
+
+
+def test_detects_dangling_and_orphan_problem(data_dir: Path) -> None:
+    # 存在しない problem を参照する challenge
+    path = data_dir / "papers" / "arxiv-2101.00001.json"
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["challenges"][0]["problem_id"] = "prob-99"
+    path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+    errors = validate_mod.validate()
+    assert any("存在しない problem" in e for e in errors)
+
+    # どこからも参照されない problem（もう一方の参照も外す）
+    path2 = data_dir / "papers" / "arxiv-2102.00002.json"
+    raw2 = json.loads(path2.read_text(encoding="utf-8"))
+    raw2["challenges"][0]["problem_id"] = None
+    path2.write_text(json.dumps(raw2, ensure_ascii=False), encoding="utf-8")
+    errors = validate_mod.validate()
+    assert any("孤立 problem" in e for e in errors)

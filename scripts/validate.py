@@ -16,9 +16,11 @@ from pydantic import ValidationError
 
 from app import config
 from app.models import (
+    CHALLENGE_ID_RE,
     CLAIM_ID_RE,
     SYMMETRIC_RELATION_TYPES,
     Paper,
+    Problem,
     Question,
     QuestionLink,
     Relation,
@@ -69,14 +71,23 @@ def validate() -> list[str]:
             m = CLAIM_ID_RE.match(claim.id)
             if m and m.group("paper_id") != paper.id:
                 errors.append(f"{paper.id}: claim {claim.id} の接頭辞が paper id と一致しない")
+        for ch in paper.challenges:
+            mc = CHALLENGE_ID_RE.match(ch.id)
+            if mc and mc.group("paper_id") != paper.id:
+                errors.append(f"{paper.id}: challenge {ch.id} の接頭辞が paper id と一致しない")
 
-    # claim ID の全体一意性
+    # claim / challenge ID の全体一意性
     claim_ids: set[str] = set()
+    challenge_ids: set[str] = set()
     for paper in papers:
         for claim in paper.claims:
             if claim.id in claim_ids:
                 errors.append(f"claim id が重複: {claim.id}")
             claim_ids.add(claim.id)
+        for ch in paper.challenges:
+            if ch.id in challenge_ids:
+                errors.append(f"challenge id が重複: {ch.id}")
+            challenge_ids.add(ch.id)
 
     # --- relations.json ---
     relations_raw = _read(config.relations_file(), {"relations": []}, errors)
@@ -105,6 +116,29 @@ def validate() -> list[str]:
             errors.append(
                 f"{rel.id}: {rel.type} は対称関係のため from < to（辞書順）に正規化すること"
             )
+
+    # --- problems.json と challenge.problem_id の整合 ---
+    problems: list[Problem] = []
+    problems_raw = _read(config.problems_file(), {"problems": []}, errors)
+    for i, raw in enumerate(problems_raw.get("problems", [])):
+        try:
+            problems.append(Problem.model_validate(raw))
+        except ValidationError as e:
+            errors += _fmt_validation_error(f"problems.json[{i}]", e)
+    problem_ids = {p.id for p in problems}
+    if len(problem_ids) != len(problems):
+        errors.append("problems.json: problem id が重複している")
+    referenced_problems: set[str] = set()
+    for paper in papers:
+        for ch in paper.challenges:
+            if ch.problem_id is not None:
+                referenced_problems.add(ch.problem_id)
+                if ch.problem_id not in problem_ids:
+                    errors.append(f"{ch.id}: 存在しない problem を参照している: {ch.problem_id}")
+    for pid in problem_ids - referenced_problems:
+        errors.append(
+            f"{pid}: どの challenge からも参照されていない孤立 problem（削除するか紐付けること）"
+        )
 
     # --- questions.json ---
     questions: list[Question] = []

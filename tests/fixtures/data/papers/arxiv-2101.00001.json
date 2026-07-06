@@ -20,6 +20,16 @@
   ],
   "imported_at": "2026-07-01T09:00:00+09:00",
   "notes": "",
+  "challenges": [
+    {
+      "id": "arxiv-2101.00001-ch01",
+      "summary_ja": "大規模モデルはスケーリングだけでは多段の算術推論が改善しない",
+      "quote": "scaling alone does not improve multi-step arithmetic reasoning",
+      "section": "1",
+      "pages": "1",
+      "problem_id": "prob-01"
+    }
+  ],
   "claims": [
     {
       "id": "arxiv-2101.00001-c01",

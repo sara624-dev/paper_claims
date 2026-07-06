@@ -79,6 +79,10 @@ def main() -> int:
             checked += 1
             if normalize(claim.quote) not in ntext:
                 errors.append(f"{claim.id}: quote が PDF 本文に見つからない: “{claim.quote[:60]}…”")
+        for ch in paper.challenges:
+            checked += 1
+            if normalize(ch.quote) not in ntext:
+                errors.append(f"{ch.id}: quote が PDF 本文に見つからない: “{ch.quote[:60]}…”")
 
     for msg in skipped:
         print(f"WARN: {msg}")

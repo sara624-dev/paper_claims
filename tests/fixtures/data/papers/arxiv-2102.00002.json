@@ -21,6 +21,16 @@
   ],
   "imported_at": "2026-07-02T09:00:00+09:00",
   "notes": "",
+  "challenges": [
+    {
+      "id": "arxiv-2102.00002-ch01",
+      "summary_ja": "多段推論の改善手法とされる自己修正の有効性が未検証である",
+      "quote": "whether self-correction improves multi-step reasoning remains unverified",
+      "section": "1",
+      "pages": "2",
+      "problem_id": "prob-01"
+    }
+  ],
   "claims": [
     {
       "id": "arxiv-2102.00002-c01",

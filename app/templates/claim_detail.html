@@ -14,6 +14,7 @@
     </p>
     <h1 class="card__title">{{ claim.summary_ja }}</h1>
     <blockquote class="quote">{{ claim.quote }} <cite>§{{ claim.evidence.section }}{% if claim.evidence.pages %} · p.{{ claim.evidence.pages }}{% endif %}</cite></blockquote>
+    {% if claim.context_ja %}<p class="context">{{ claim.context_ja }}</p>{% endif %}
     {% if claim.confidence_note %}<p class="confnote">確度の根拠: {{ claim.confidence_note }}</p>{% endif %}
 
     <h2 class="sectionhead">根拠</h2>

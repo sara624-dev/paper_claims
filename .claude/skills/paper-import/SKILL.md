@@ -70,11 +70,24 @@ pdftotext data/pdfs/<paper_id>.pdf - | head -c 30000   # 分割して読む
 - 各クレームに必須:
   - `summary_ja`: 条件を含む一文の和文サマリ（「〜の条件下で〜」まで書く。単なる「手法Xは有効」は不可）
   - `quote`: **原文そのままの引用**（言い換え禁止。PDF から正確に転記）
+  - `context_ja`: **引用周辺の文脈の補足（2〜4文）**。引用の前後が何を論じているか・指示語（this/it/the task 等）が指すもの・成立の前提条件を再構成する。summary_ja の言い換えは不可。
+    **quote 断片だけでは関係judgmentもユーザーの理解もミスリードされる**ため、文脈は抽出時（PDF全文が見えている唯一の機会）に固定する
   - `evidence.section`: 出典セクション番号（必須）。`pages` も可能な限り
   - `kind`: experimental（実験結果）/ theoretical（証明・理論）/ opinion（著者の見解・展望）
   - `confidence`: high（複数データセット・複数モデルで一貫）/ medium（単一設定のみ）/ low（予備的・n小）。判定理由を `confidence_note` に書く
 - 数値結果は `evidence.metrics` に **baseline 込み**で記録する（改善幅が関係judgmentの材料になる）
 - claim id は `<paper_id>-c01` から連番
+
+### 4.5 課題の抽出
+
+「この論文は何を解こうとしているのか」を **1〜2件**（最大3件）抽出し、paper JSON の `challenges` に入れる:
+
+- **論文が自ら取り組むと明言している課題のみ**（一般的な背景説明・関連研究が挙げる課題は不可）。
+  Abstract / Introduction の課題宣言文（"However, ..." "remains a challenge" "has not proved sufficient" 等）を探す
+- `summary_ja` は「何が問題で、なぜ既存手法では足りないか」まで含む一文
+- `quote`（原文そのまま・捏造厳禁）+ `section` 必須。verify_quotes の機械検証対象
+- `context_ja` 必須（2〜4文）: 課題宣言の前後の議論・指示語の解決・課題のスコープを補足する（クレームと同じ原則）
+- id は `<paper_id>-ch01` から連番、`problem_id` はこの時点では null
 
 ### 5. トピック決定
 
@@ -111,7 +124,9 @@ grep '<topic-id>' data/claims_index.jsonl | grep -e '<tag1>' -e '<tag2>' -e '<ta
 で**同一トピック かつ タグが1つ以上重なる**既存クレーム候補を取得する（全く主題の異なる論文
 まで照合するのは無駄なため、タグでスコープを絞る）。候補が0〜数件しかない場合のみ、
 トピック全体の一行サマリを流し読みして明白な見落としがないか確認してよい。
-サマリを読んで関連しそうな候補があれば、**その候補が属する論文ファイルだけ** Read して詳細（実験条件・数値）を比較し、関係を判定する:
+サマリを読んで関連しそうな候補があれば、**その候補が属する論文ファイルだけ** Read して詳細を比較し、関係を判定する。
+**インデックスの一行サマリだけで判定してはならない** — 必ず候補クレームの `quote`・`context_ja`・`evidence`
+（実験条件・数値）まで読み、文脈を踏まえて判定すること（断片比較はミスリードを生む）:
 
 | type | 判定基準 |
 |------|---------|
@@ -124,6 +139,23 @@ grep '<topic-id>' data/claims_index.jsonl | grep -e '<tag1>' -e '<tag2>' -e '<ta
 - **確信の持てない関係は作らない**（偽リンクより欠落を許容）。迷ったら relation の `confidence: low` ではなく「作らない」を選ぶ
 - 関係の向きは「from が to を 支持/反証/拡張 する」= 新しい論文が from になるのが通常
 - `contradicts` は論理的には対称（脈図では両端矢印で描画）。from は「対立を提起した側」の来歴として記録する。相互支持は supports を両方向に2本張ってよい
+
+### 6.3 共有課題の照合（同じ課題に向き合う論文の紐付け）
+
+```bash
+grep '<topic-id>' data/challenges_index.jsonl | grep -e '<tag1>' -e '<tag2>'
+```
+
+で既存論文の課題とタグスコープ内で突き合わせ、**実質同じ課題に向き合っている**ものがあれば:
+
+1. 既存側に `problem_id` があれば → 新論文の challenge をその problem に紐付ける提案
+2. どちらも未紐付けなら → `data/problems.json` への新規 problem（`prob-NN`・name_ja）作成と双方の紐付けを提案
+
+いずれも **AskUserQuestion でユーザーに確認してから**書き込む（課題の同一性判定はユーザーの分類眼に委ねる。
+タグと同じ思想）。**確認を求める前に、比較対象の課題それぞれの summary_ja・quote・context_ja を
+チャットで並べて提示すること**（断片だけ見せて選ばせるのはミスリードを生むため不可）。
+承認されたら problems.json 追記 + 該当論文の `challenges[].problem_id` を更新。
+確信が持てない・ユーザーが否認した場合は紐付けない。
 
 ### 6.5 オープンな問いへの回答性判定
 
@@ -139,10 +171,11 @@ grep '<topic-id>' data/claims_index.jsonl | grep -e '<tag1>' -e '<tag2>' -e '<ta
 
 ### 7. 書き込み
 
-1. `data/papers/<paper_id>.json` を新規作成（スキーマは CLAUDE.md の表・`tests/fixtures/data/` の実例に従う。`imported_at` は `TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M:%S+09:00`）
+1. `data/papers/<paper_id>.json` を新規作成（challenges / claims 込み。スキーマは CLAUDE.md の表・`tests/fixtures/data/` の実例に従う。`imported_at` は `TZ=Asia/Tokyo date +%Y-%m-%dT%H:%M:%S+09:00`）
 2. 関係があれば `data/relations.json` に Edit で追記（`rel-NNNN` は既存最大値+1）
 3. 問いへのリンクがあれば `data/question_links.json` に追記（手順6.5）
-4. 新規トピックは `data/topics.json` に追記
+4. 共有課題の承認があれば `data/problems.json` 追記 + 該当論文の `problem_id` 更新（手順6.3）
+5. 新規トピックは `data/topics.json` に追記
 
 ### 8. 検証（必須・スキップ不可）
 

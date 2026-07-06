@@ -274,6 +274,7 @@
     quote.append(el("cite", "", "§" + c.evidence.section + (c.evidence.pages ? " · p." + c.evidence.pages : "")));
     out.push(quote);
 
+    if (c.context_ja) out.push(el("p", "context", c.context_ja));
     if (c.evidence.conditions) out.push(el("p", "confnote", "条件: " + c.evidence.conditions));
     if (c.evidence.metrics.length) {
       const m = c.evidence.metrics[0];

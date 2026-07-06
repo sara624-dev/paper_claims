@@ -54,10 +54,12 @@ QUESTION_STATUS_LABELS_JA = {"open": "探究中", "settled": "決着", "archived
 
 PAPER_ID_RE = re.compile(r"^(arxiv-[0-9]{4}\.[0-9]{4,5}|pdf-[a-z0-9][a-z0-9-]*)$")
 CLAIM_ID_RE = re.compile(r"^(?P<paper_id>.+)-c(?P<seq>[0-9]{2})$")
+CHALLENGE_ID_RE = re.compile(r"^(?P<paper_id>.+)-ch(?P<seq>[0-9]{2})$")
 RELATION_ID_RE = re.compile(r"^rel-[0-9]{4}$")
 TOPIC_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 QUESTION_ID_RE = re.compile(r"^q-[0-9]{2}$")
 QUESTION_LINK_ID_RE = re.compile(r"^ql-[0-9]{4}$")
+PROBLEM_ID_RE = re.compile(r"^prob-[0-9]{2}$")
 
 JST = timezone(timedelta(hours=9))
 
@@ -99,6 +101,39 @@ class Evidence(BaseModel):
         return v
 
 
+class Challenge(BaseModel):
+    """論文が向き合っている課題1件（Intro / Abstract の課題宣言に基づく）。
+
+    複数論文が同じ課題に向き合う場合は problem_id で共有課題（problems.json）を参照する。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    summary_ja: str
+    quote: str  # 原文引用（プロベナンス原則により必須。verify_quotes の検証対象）
+    # 引用周辺の文脈の和文補足（指示語の解決・前提条件・前後の議論）。要約ではなく文脈の再構成。
+    # 同一性判定・ユーザーへの提示はこれ込みで行う（quote 断片だけの比較はミスリードを生む）
+    context_ja: str = ""
+    section: str
+    pages: str = ""
+    problem_id: str | None = None  # 共有課題への参照（未共有なら null）
+
+    @field_validator("id")
+    @classmethod
+    def _valid_id(cls, v: str) -> str:
+        if not CHALLENGE_ID_RE.match(v):
+            raise ValueError(f"challenge id が <paper_id>-chNN 形式でない: {v}")
+        return v
+
+    @field_validator("summary_ja", "quote", "section")
+    @classmethod
+    def _not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("summary_ja / quote / section は必須")
+        return v
+
+
 class Claim(BaseModel):
     """論文が主張していること1件。"""
 
@@ -107,6 +142,9 @@ class Claim(BaseModel):
     id: str
     summary_ja: str
     quote: str  # 原文引用（プロベナンス原則により必須）
+    # 引用周辺の文脈の和文補足（指示語の解決・前提条件・前後の議論）。関係judgmentと
+    # ユーザーへの提示はこれ込みで行う（quote 断片だけの比較はミスリードを生む）
+    context_ja: str = ""
     kind: str
     evidence: Evidence
     confidence: str
@@ -160,6 +198,7 @@ class Paper(BaseModel):
     tags: list[str] = Field(default_factory=list)  # 照合スコープ用の細粒度タグ（kebab-case）
     imported_at: str
     notes: str = ""
+    challenges: list[Challenge] = Field(default_factory=list)  # この論文が向き合う課題（1〜3件）
     claims: list[Claim] = Field(default_factory=list)
 
     @field_validator("id")
@@ -249,6 +288,31 @@ class Topic(BaseModel):
     def _valid_id(cls, v: str) -> str:
         if not TOPIC_ID_RE.match(v):
             raise ValueError(f"topic id が kebab-case slug でない: {v}")
+        return v
+
+
+class Problem(BaseModel):
+    """複数論文が共有する課題（ハブ）。各論文の Challenge.problem_id が参照する。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    name_ja: str
+    description: str = ""
+    created_at: str
+
+    @field_validator("id")
+    @classmethod
+    def _valid_id(cls, v: str) -> str:
+        if not PROBLEM_ID_RE.match(v):
+            raise ValueError(f"problem id が prob-NN 形式でない: {v}")
+        return v
+
+    @field_validator("name_ja")
+    @classmethod
+    def _name_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("name_ja は必須")
         return v
 
 

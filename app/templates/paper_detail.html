@@ -28,6 +28,30 @@
     {% if paper.notes %}<p class="notes">{{ paper.notes }}</p>{% endif %}
   </article>
 
+  {% if paper.challenges %}
+  <h2 class="sectionhead">向き合う課題 <span class="sectionhead__count">{{ paper.challenges|length }}</span></h2>
+  <ul class="cards">
+    {% for ch in paper.challenges %}
+    <li class="card">
+      <p class="card__title">{{ ch.summary_ja }}</p>
+      <blockquote class="quote">{{ ch.quote }} <cite>§{{ ch.section }}{% if ch.pages %} · p.{{ ch.pages }}{% endif %}</cite></blockquote>
+      {% if ch.context_ja %}<p class="context">{{ ch.context_ja }}</p>{% endif %}
+      {% if ch.id in challenge_mates %}
+      <p class="sheet__kicker">同じ課題に向き合う論文（<a href="/problems">{{ challenge_mates[ch.id].name_ja }}</a>）</p>
+      <ul class="answers">
+        {% for e in challenge_mates[ch.id].entries %}
+        <li class="answer">
+          <a class="answer__text" href="/papers/{{ e.paper_id }}">{{ e.paper_title }}</a>
+          <p class="answer__src">{{ e.summary_ja }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   <h2 class="sectionhead">主張 <span class="sectionhead__count">{{ paper.claims|length }}</span></h2>
 
   <ul class="cards">

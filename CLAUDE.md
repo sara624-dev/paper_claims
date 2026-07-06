@@ -56,8 +56,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## スケーリングの引き金（この閾値に達したら対応する）
 
-**topics と tags の役割分担**: topics = 少数・台帳管理（topics.json）・UI と問いのスコープ単位。
-tags = 多数・語彙再利用ルール付きの自由付与・**関係judgmentの照合スコープ**（同一トピック内でタグが重なる論文に絞る）。
+**4つの分類軸の役割分担**:
+- **topic** = 分野の棚（少数・台帳管理・UI と問いのスコープ単位）
+- **tag** = 主題の索引（多数・ユーザー付与・**関係judgmentの照合スコープ**）
+- **question** = ユーザーの問い（個人の探究。クレームが答えとして紐づく）
+- **problem** = 論文発の共有課題（複数論文が向き合う研究課題。challenge が参照するハブ）
 
 | 兆候 | 対応 |
 |------|------|
@@ -83,7 +86,18 @@ tags = 多数・語彙再利用ルール付きの自由付与・**関係judgment
 | `tags` | list[str] | 照合スコープ用の細粒度タグ（英語 kebab-case・2〜5個）。**ユーザーが付与する**（取り込み時にスキルが既存語彙から候補を提案し、ユーザーが選択・追加）。既存語彙の再利用優先・表記ゆれ厳禁。関係judgmentは同一トピック内でタグが重なる論文に絞られる |
 | `imported_at` | str | ISO 時刻（JST、秒精度） |
 | `notes` | str | 自由メモ |
+| `challenges` | list | 下記 Challenge の配列（この論文が向き合う課題・1〜3件） |
 | `claims` | list | 下記 Claim の配列 |
+
+### Challenge（papers ファイル内）— 論文が向き合う課題
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `id` | str | `<paper_id>-chNN`（2桁連番）。全体で一意 |
+| `summary_ja` | str | 課題の一文サマリ（何が問題で、なぜ既存手法では足りないか。必須） |
+| `quote` / `section` / `pages` | str | 課題宣言の原文引用（必須・verify_quotes の検証対象）/ 出典 |
+| `context_ja` | str | 課題宣言の周辺文脈の補足（2〜4文）。同一性判定・提示は文脈込みで行う |
+| `problem_id` | str \| null | 共有課題（problems.json）への参照。**複数論文が同じ課題に向き合うときのみ**設定（ユーザー確認制） |
 
 ### Claim（papers ファイル内）
 
@@ -92,6 +106,7 @@ tags = 多数・語彙再利用ルール付きの自由付与・**関係judgment
 | `id` | str | `<paper_id>-cNN`（2桁連番）。全体で一意 |
 | `summary_ja` | str | 条件を含む一文の和文サマリ（必須） |
 | `quote` | str | **原文そのままの引用**（必須・言い換え禁止） |
+| `context_ja` | str | 引用周辺の文脈の補足（2〜4文。指示語の解決・前提条件・前後の議論）。**関係judgmentとユーザーへの提示は文脈込みで行う** |
 | `kind` | str | `experimental` / `theoretical` / `opinion` |
 | `evidence.conditions` | str | 実験条件（モデル・設定など） |
 | `evidence.datasets` | list[str] | データセット名 |
@@ -123,6 +138,13 @@ tags = 多数・語彙再利用ルール付きの自由付与・**関係judgment
 ### `data/topics.json` — `{"topics": [...]}`
 
 `{id（kebab-case slug）, name_ja, description, created_at}`。論文→トピック対応は paper 側の `topics` に持つ。
+
+### `data/problems.json` — `{"problems": [...]}` 共有課題（ハブ）
+
+`{id（prob-NN）, name_ja, description, created_at}`。複数論文の Challenge が同じ課題に向き合うとき、
+各 `challenges[].problem_id` がここを参照する（ペアリンクではなくハブ型 — 「同じ課題の論文たち」という
+グループ指向のクエリに合わせた設計）。作成・紐付けは取り込み時にスキルが提案し**ユーザーが承認**する。
+どの challenge からも参照されない孤立 problem は validate がエラーにする。
 
 ### `data/questions.json` — `{"questions": [...]}` ユーザーが立てた問い
 

@@ -81,6 +81,14 @@ def test_graph_full_and_topic_filter(client: TestClient) -> None:
     assert body["meta"]["edge_count"] == 0
 
 
+def test_problems_api(client: TestClient) -> None:
+    body = client.get("/api/problems").json()
+    assert len(body["problems"]) == 1
+    prob = body["problems"][0]
+    assert prob["id"] == "prob-01"
+    assert [e["paper_id"] for e in prob["entries"]] == ["arxiv-2101.00001", "arxiv-2102.00002"]
+
+
 def test_questions_list_and_detail(client: TestClient) -> None:
     body = client.get("/api/questions").json()
     q1 = next(q for q in body["questions"] if q["id"] == "q-01")
@@ -124,6 +132,7 @@ def test_pages_render(client: TestClient) -> None:
         "/?topic=cot-reasoning",
         "/?question=q-01",
         "/questions",
+        "/problems",
         "/papers",
         "/papers/arxiv-2101.00001",
         "/claims/arxiv-2102.00002-c02",

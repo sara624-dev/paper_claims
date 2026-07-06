@@ -47,5 +47,15 @@ def question_links_file() -> Path:
     return DATA_DIR / "question_links.json"
 
 
+def problems_file() -> Path:
+    """共有課題台帳ファイルのパスを返す。"""
+    return DATA_DIR / "problems.json"
+
+
+def challenges_index_file() -> Path:
+    """課題照合用インデックス（派生物）のパスを返す。"""
+    return DATA_DIR / "challenges_index.jsonl"
+
+
 TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"

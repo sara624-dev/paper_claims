@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}課題 — 論脈 RONMYAKU{% endblock %}
+
+{% block content %}
+<main class="container">
+
+  <h1 class="pagehead">課題</h1>
+  <p class="pagelead">複数の論文が共有して向き合っている研究課題。どの課題に誰が挑んでいるかを一望する。</p>
+
+  {% if problems %}
+  <ul class="cards">
+    {% for p in problems %}
+    <li class="card card--question">
+      <p class="claimline">
+        <code class="claimid">{{ p.id }}</code>
+        <span class="badge">論文 {{ p.entries|length }}</span>
+      </p>
+      <h2 class="card__title">{{ p.name_ja }}</h2>
+      {% if p.description %}<p class="confnote">{{ p.description }}</p>{% endif %}
+      <ul class="answers">
+        {% for e in p.entries %}
+        <li class="answer">
+          <a class="answer__text" href="/papers/{{ e.paper_id }}">{{ e.summary_ja }}</a>
+          <p class="answer__src">{{ e.paper_title }}{% if e.year %}（{{ e.year }}）{% endif %}</p>
+        </li>
+        {% endfor %}
+      </ul>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    <p class="empty__title">まだ共有課題がありません</p>
+    <p>複数の論文が同じ課題に向き合っていると判定されたとき、確認の上でここに登録されます。</p>
+  </div>
+  {% endif %}
+
+</main>
+{% endblock %}

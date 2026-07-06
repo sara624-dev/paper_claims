@@ -15,7 +15,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from . import config
-from .models import Paper, Question, QuestionLink, Relation, Topic
+from .models import Challenge, Paper, Problem, Question, QuestionLink, Relation, Topic
 
 
 def _read_json(path: Path, default: Any) -> Any:
@@ -55,6 +55,7 @@ def _data_signature() -> tuple:
         _mtime(config.topics_file()),
         _mtime(config.questions_file()),
         _mtime(config.question_links_file()),
+        _mtime(config.problems_file()),
     )
 
 
@@ -67,6 +68,7 @@ class Vault:
     topics: list[Topic] = field(default_factory=list)
     questions: list[Question] = field(default_factory=list)
     question_links: list[QuestionLink] = field(default_factory=list)
+    problems: list[Problem] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
     def paper_by_id(self, paper_id: str) -> Paper | None:
@@ -88,6 +90,19 @@ class Vault:
     def links_for_claim(self, claim_id: str) -> list[QuestionLink]:
         """クレームに紐づくリンク一覧を返す。"""
         return [link for link in self.question_links if link.claim_id == claim_id]
+
+    def problem_by_id(self, problem_id: str) -> Problem | None:
+        """ID で共有課題を引く。"""
+        return next((p for p in self.problems if p.id == problem_id), None)
+
+    def challenges_for_problem(self, problem_id: str) -> list[tuple[Paper, Challenge]]:
+        """共有課題に向き合う (論文, 課題文) の一覧を返す。"""
+        return [
+            (paper, ch)
+            for paper in self.papers
+            for ch in paper.challenges
+            if ch.problem_id == problem_id
+        ]
 
 
 def _load_vault() -> Vault:
@@ -135,6 +150,12 @@ def _load_vault() -> Vault:
             vault.question_links.append(QuestionLink.model_validate(raw))
         except ValidationError as e:
             vault.errors.append(f"question_links.json: {e.errors()[0]['msg']}")
+
+    for raw in _read_json(config.problems_file(), {"problems": []}).get("problems", []):
+        try:
+            vault.problems.append(Problem.model_validate(raw))
+        except ValidationError as e:
+            vault.errors.append(f"problems.json: {e.errors()[0]['msg']}")
 
     return vault
 

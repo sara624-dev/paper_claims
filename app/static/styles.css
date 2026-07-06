@@ -115,6 +115,7 @@ code { font-family: var(--mono); font-size: 0.85em; background: rgba(0,0,0,0.06)
 .card__title { font-family: var(--serif); font-size: 16px; margin: 6px 0; line-height: 1.5; }
 .card__title a { color: inherit; }
 .card__meta { font-size: 13px; color: var(--tx-2); margin: 4px 0; }
+.card__challenge { font-size: 13px; color: #3d434c; margin: 6px 0 0; padding-left: 10px; border-left: 2px solid var(--line); }
 .card__foot { margin: 10px 0 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .card--full { padding: 20px; }
 .claimline { display: flex; gap: 6px; align-items: center; margin: 0 0 8px; flex-wrap: wrap; }
@@ -127,6 +128,8 @@ code { font-family: var(--mono); font-size: 0.85em; background: rgba(0,0,0,0.06)
 }
 .quote cite { font-style: normal; font-size: 12px; color: var(--tx-2); white-space: nowrap; }
 .confnote { font-size: 13px; color: var(--tx-2); }
+/* 引用周辺の文脈補足（指示語・前提・前後の議論） */
+.context { font-size: 13px; color: #3d434c; background: rgba(0,0,0,0.035); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
 
 .paperhead { margin: 8px 0 4px; }
 .paperhead__title { font-family: var(--serif); font-size: 22px; line-height: 1.45; margin: 8px 0; }

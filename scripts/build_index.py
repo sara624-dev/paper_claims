@@ -23,6 +23,28 @@ def main() -> int:
         for msg in vault.errors:
             print(f"  - {msg}")
 
+    # 課題照合用インデックス（1課題=1行）
+    ch_lines = []
+    for paper in sorted(vault.papers, key=lambda p: p.id):
+        for ch in paper.challenges:
+            ch_lines.append(
+                json.dumps(
+                    {
+                        "id": ch.id,
+                        "topics": paper.topics,
+                        "tags": paper.tags,
+                        "summary_ja": ch.summary_ja,
+                        "problem_id": ch.problem_id,
+                        "paper_title": paper.title,
+                    },
+                    ensure_ascii=False,
+                )
+            )
+    ch_out = config.challenges_index_file()
+    ch_out.parent.mkdir(parents=True, exist_ok=True)
+    ch_out.write_text("\n".join(ch_lines) + ("\n" if ch_lines else ""), encoding="utf-8")
+    print(f"OK: {ch_out} を再生成（{len(ch_lines)} 課題）")
+
     lines = []
     for paper in sorted(vault.papers, key=lambda p: p.id):
         for claim in paper.claims:
